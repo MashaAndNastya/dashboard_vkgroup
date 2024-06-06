@@ -3,7 +3,11 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
 import plotly.graph_objs as go
+
 from data import *
+from datetime import date, datetime
+
+
 text_err = 'Коэффициент охвата (Engagement Rate by Reach) — метрика, которая показывает, сколько людей из тех, что увидели пост, взаимодействовали с ним: комментировали, ставили лайки, делали репосты. Более правильно ERR переводится как коэффициент вовлечённости по охвату.\nКак рассчитать: количество реакций / охват × 100%'
 text_arr = 'Annual Recurring Revenue (ARR) — это регулярный ежегодный доход. \nКак расчитать: Количество клиентов * Средний доход с клиента в месяц'
 
@@ -52,21 +56,84 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div([
     html.Div([
+
+        # поля ввода
         html.Div([
-            html.H4('Trial graph by date'),
-            dcc.Dropdown(
-                id='day-dropdown',
-                options=[
-                    {'label': '1', 'value': '1'},
-                    {'label': '2', 'value': '2'}
-                ],
-                value='1',
-                style={'color': '#333'},
-                className='dcc_compon',
-            )
-        ], className='row',
-            style={'grid-column': 'span 12', 'background-color': '#f9f9f9',
-                   'padding': '0px', 'border-radius': '20px'}),
+
+            # поле для ссылки
+            html.Div([
+                html.P(['Введите ссылку на сообщество'],
+                        className='link_header', style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
+                dcc.Textarea(
+                    id='link_textarea',
+                    placeholder='Ссылка на сообщество',
+                    style={'width': '95%', 'height': '20px', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px', 'resize': 'none', 'overflow': 'hidden'},
+                    className='link_textarea',
+                )
+            ], className='row',
+                style={'display': 'flex', 'flex-direction': 'column', 'margin-bottom': '10px', 'border-radius': '20px',}),
+
+            # поле для токена
+            html.Div([
+                html.P(['Введите Ваш токен'],
+                        className='token_header', style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
+                dcc.Textarea(
+                    id='token_textarea',
+                    placeholder='Ваш токен',
+                    style={'width': '95%', 'height': '20px', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px', 'resize': 'none', 'overflow': 'hidden'},
+                    className='token_textarea',
+                )
+            ], className='row',
+                style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
+
+        ], className='fields_container', style={'grid-column': 'span 6'}),
+
+        # контейнер для опции (пока что) и даты
+        html.Div([
+
+            # выбор опции 1/2 для коллбэков (заменить на выбор периода времени)
+            html.Div([
+                html.H4('Trial graph by date'),
+                dcc.Dropdown(
+                    id='day-dropdown',
+                    options=[
+                        {'label': '1', 'value': '1'},
+                        {'label': '2', 'value': '2'}
+                    ],
+                    value='1',
+                    style={'color': '#333'},
+                    className='dcc_compon',
+                )
+            ], className='row',
+                style={'grid-column': 'span 6', 'padding': '0px', 'border-radius': '20px'}),
+
+
+            # выбор даты радикнопки
+            html.Div([
+                dcc.RadioItems(
+                    id='radio-items',
+                    options=[
+                        {'label': 'Последняя неделя', 'value': 'last_week'},
+                        {'label': 'Последний месяц', 'value': 'last_month'},
+                        {'label': 'Выбрать дату', 'value': 'custom_date'}
+                    ],
+                    value='last_week'
+                ),
+
+                # календарь
+                html.Div(id='date-picker-div', style={'display': 'none'}, children=[
+                    dcc.DatePickerRange(
+                        id='date-picker-range',
+                        start_date=date.today(),
+                        end_date_placeholder_text='Выберите дату!'
+                    )
+                ])
+            ])
+
+
+        ], className='date_container', style={'grid-column': 'span 6'}),
+
+
 
         # график users_activity
         html.Div([
@@ -153,8 +220,10 @@ app.layout = html.Div([
             )
         ], id='age',
             style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'})
-    ], className='grid-container', style={'background-color': '#8459822', 'display': 'grid', 'grid-template-columns': 'repeat(12, 1fr)', 'grid-gap': '20px', 'padding': '20px'})
-])
+    ], className='grid-container',
+        style={'background-color': '#8459822', 'display': 'grid', 'grid-template-columns': 'repeat(12, 1fr)',
+               'grid-gap': '20px', 'padding': '20px'})
+], style={'background-color': '#8284bd', 'width': '100%'})
 
 
 # активность график
@@ -248,6 +317,7 @@ def update_graph(selected_option):
                     style={'color': '#f9f9f9',
                            'font-size': '24px',
                            'font-weight': 'bold',
+                           'font-family': 'Montserrat.ttf',
                            'mardin-bottom': '5px',
                            'text-align': 'center'}
                    ),
@@ -375,6 +445,37 @@ def update_graph(selected_option):
                    )
         ]
 
+@app.callback(
+    Output('date-picker-div', 'style'),
+    Input('radio-items', 'value')
+)
+def toggle_date_picker(selected_value):
+    if selected_value == 'custom_date':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output('output-dates', 'children'),
+    Input('date-picker-range', 'start_date'),
+    Input('date-picker-range', 'end_date')
+)
+def update_output(start_date, end_date):
+    if start_date and end_date:
+
+        # Конвертация строковых дат в объекты datetime
+        start_time = datetime.fromisoformat(start_date)
+        end_time = datetime.fromisoformat(end_date)
+
+        # Преобразование в формат UNIX
+        start_time = int(start_time.timestamp())
+        end_time = int(end_time.timestamp())
+
+        return f'Вы выбрали от {start_time} до {end_time}'
+    return 'Пожалуйста, выберите диапазон дат'
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
