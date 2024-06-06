@@ -2,8 +2,6 @@ import pandas as pd
 import requests
 import time
 from datetime import datetime
-from cachetools import cached, TTLCache
-cache = TTLCache(maxsize=1000, ttl=300)  # Ограничиваем кэш максимум 1000 записями на 5 минут
 #Изначальные переменные, потом будут передаваться через поле для ввода
 url_start = 'https://vk.com/dimdimychmusic'
 url = url_start.split('/')
@@ -30,7 +28,6 @@ date_range = pd.date_range(start=pd.to_datetime(start_time, unit='s').date(), en
 
 
 
-@cached(cache)
 def fetch_vk_data(access_token, version, count, offset):
     data_dict = {
         'ID': [],
@@ -84,7 +81,7 @@ def fetch_vk_data(access_token, version, count, offset):
     print(df_posts.columns)
     return df_posts
 
-@cached(cache)
+
 def fetch_vk_stats(start_time, end_time, access_token, id_group):
     # Загрузка всех параметров
     params = {
