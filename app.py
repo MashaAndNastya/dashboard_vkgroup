@@ -306,6 +306,7 @@ def update_dinamyc_graph(selected_option):
         )
         return updated_fig_dinamyc_2
 #ERR
+
 @app.callback(
     Output('ERR', 'children'),
     [Input('day-dropdown', 'value')]
@@ -337,11 +338,31 @@ def update_graph(selected_option):
                           'font-size': '20px',
                           'font-weight': 'bold'}
                    ),
-            html.P('Mama mia mama mama mia mama mia Mama mia mama mama mia mama mia Mama mia mama mama mia mama mia',
-                   style={'color': '#f9f9f9',
-                          'font-size': '12px'}
-                   )
+            html.P(text_advice_err, style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+            html.P("""
+                Однако общие стандарты бывают обманчивы, лучший способ оценить
+                привлекательность контента — ежемесячно сравнивать текущее значение с ER за предыдущий период.
+                """, style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+            html.P("Можете воспользоваться следующими советами для повышения ERR:",style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+            html.Ul([
+                html.Li("Задавайте вопросы: это увеличивает количество комментариев.",style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+                html.Li(
+                    "Вводите геймификацию: интерактивы удерживают людей и продлевают взаимодействие с публикацией.",style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+                html.Li("Проводите опросы и голосования: они хорошо вовлекают.",style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+                html.Li(
+                    "Общайтесь в комментариях: отвечайте на сообщения — так люди будут втягиваться в общение с брендом.",style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+                html.Li("Оптимизируйте базу подписчиков.",style={'color': '#f9f9f9',
+                          'font-size': '12px'}),
+            ])
         ]
+
 
 
 
