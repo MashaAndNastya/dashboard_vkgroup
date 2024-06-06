@@ -102,7 +102,7 @@ def fetch_vk_stats(start_time, end_time, access_token, id_group):
 
     # Инициализация заготовок
     # Initialize empty lists to store the extracted data
-    likes, copies, hidden, comment, subscribed, unsubscribed, visitors = [], [], [], [], [], [], []
+    likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user = [], [], [], [], [], [], [], [], []
     sex_f, sex_m = [], []
     age_data = {}
     age_sex_data = {}
@@ -118,8 +118,9 @@ def fetch_vk_stats(start_time, end_time, access_token, id_group):
         comment.append(activity.get("comment", 0))
         subscribed.append(activity.get("subscribed", 0))
         unsubscribed.append(activity.get("unsubscribed", 0))
-        visitors.append(reach.get("reach", 0))
-
+        reach1.append(reach.get("reach", 0))
+        reach_subscribers.append(reach.get("reach_subscribers", 0))
+        reach_unique_user. append(reach1[-1]-reach_subscribers[-1])
         # Extracting sex data
         for sex in reach.get("sex", []):
             if sex["value"] == "f":
@@ -135,16 +136,20 @@ def fetch_vk_stats(start_time, end_time, access_token, id_group):
         for sex_age in reach.get("sex_age", []):
             age_sex_data[sex_age["value"]] = sex_age["count"]
 
-    # Creating the dataframes
-    activity_df = pd.DataFrame({"likes": likes, "copies": copies, "hidden": hidden, "comment": comment,
-                                "subscribed": subscribed, "unsubscribed": unsubscribed, "visitors": visitors})
-
     sex_df = pd.DataFrame({"f": sex_f, "m": sex_m})
     age_df = pd.DataFrame(list(age_data.items()), columns=["age_group", "count"])
     age_sex_df = pd.DataFrame(list(age_sex_data.items()), columns=["sex_age", "count"])
-    return likes, copies, hidden, comment, subscribed, unsubscribed, visitors, activity_df, sex_df, age_df, age_sex_df
+    return likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df
 
-#Вызов функции, запись  в переменные
-likes, copies, hidden, comment, subscribed, unsubscribed, visitors, activity_df, sex_df, age_df, age_sex_df = fetch_vk_stats(start_time, end_time, access_token, id_group)
-df = fetch_vk_data(access_token, version, count, offset)
+#Вызов функции, запись  в переменные и постобработка данных
+likes, copies, hidden, comment, subscribed, unsubscribed, reach, reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df = fetch_vk_stats(start_time, end_time, access_token, id_group)
+count_female = sum(sex_df['f'])
+count_male = sum(sex_df['m'])
+age_12_21 = age_df[(age_df['age_group'] == '12-18')]['count'].values[0]+age_df[(age_df['age_group'] == '18-21')]['count'].values[0]
+age_21_27 = age_df[(age_df['age_group'] == '21-24')]['count'].values[0]+age_df[(age_df['age_group'] == '24-27')]['count'].values[0]
+age_27_30 = age_df[(age_df['age_group'] == '27-30')]['count'].values[0]+age_df[(age_df['age_group'] == '30-35')]['count'].values[0]
+age_35_45 = age_df[(age_df['age_group'] == '35-45')]['count'].values[0]
+age_45_100 = age_df[(age_df['age_group'] == '45-100')]['count'].values[0]
 
+#расчёт ARR и ERR
+err_mean = ((sum(likes)+sum(copies)+sum(comment))/sum(reach))*100
