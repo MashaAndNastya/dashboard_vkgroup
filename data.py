@@ -153,3 +153,41 @@ age_45_100 = age_df[(age_df['age_group'] == '45-100')]['count'].values[0]
 
 #расчёт ARR и ERR
 err_mean = ((sum(likes)+sum(copies)+sum(comment))/sum(reach))*100
+if err_mean<=1:
+    text_advice_err="По общим стандартам ваш показатель ERR низкий."
+elif err_mean>1 and err_mean<=3.5:
+    text_advice_err = "По общим стандартам ваш показатель ERR средний, сложно сделать вывод об эффективности вашего сообщества."
+else:
+    text_advice_err = "Поздравляем! По общим стандартам ваш показатель ERR высокий."
+
+#вычисление самого популярного поста
+df = fetch_vk_data(access_token, version, count, offset)
+
+
+def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2):
+    # Преобразование столбца Date_UNIX в числовой тип данных
+    df['Date_UNIX'] = pd.to_numeric(df['Date_UNIX'], errors='coerce')
+
+    # Преобразование start_time и end_time из str в int
+    start_time = int(start_time)
+    end_time = int(end_time)
+
+    # Преобразование даты из UNIX-времени в datetime
+    df['Date'] = pd.to_datetime(df['Date_UNIX'], unit='s')
+
+    # Фильтрация данных по промежутку времени
+    filtered_df = df[(df['Date_UNIX'] >= start_time) & (df['Date_UNIX'] <= end_time)]
+
+    # Вычисление популярности постов
+    filtered_df['Popularity'] = (
+                df['Likes'] * like_weight + df['Views'] * view_weight + df['Comments'] * comment_weight)
+
+    # Определение самого популярного поста
+    most_popular_post = filtered_df.loc[filtered_df['Popularity'].idxmax()]
+
+    return most_popular_post
+
+
+most_popular_post = find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
+print(date_range)
+print(most_popular_post)
