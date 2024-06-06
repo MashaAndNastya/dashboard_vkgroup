@@ -150,8 +150,8 @@ app.layout = html.Div([
                 className='dcc_compon'
             )
         ], id='age',
-            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
-
+            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'})
+    ])
 ])
 
 
