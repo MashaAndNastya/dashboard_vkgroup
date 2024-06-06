@@ -151,7 +151,8 @@ app.layout = html.Div([
             )
         ], id='age',
             style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'})
-    ])
+    ], className='grid-container', style={'background-color': '#8459822', 'display': 'grid', 'grid-template-columns': 'repeat(12, 1fr)', 'grid-gap': '20px', 'padding': '20px'})
+
 ])
 
 
