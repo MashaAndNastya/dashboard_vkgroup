@@ -327,7 +327,7 @@ def update_graph(selected_option):
                     style={'color': '#f9f9f9',
                            'font-size': '24px',
                            'font-weight': 'bold',
-                           'mardin-bottom': '5px',
+                           'mardin-bottom': '5p',
                            'text-align': 'center'}
                    ),
             html.P(updated_text1,
