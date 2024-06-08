@@ -1,16 +1,18 @@
 import pandas as pd
 import requests
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 #Изначальные переменные, потом будут передаваться через поле для ввода
 url_start = 'https://vk.com/dimdimychmusic'
 url = url_start.split('/')
 access_token = "vk1.a.zPEtzBOVfFVEnCAaT2cMvW6CYvsFyOFiB8NFFU9GEz-sWujzUYZuA00WoHRpykSBtNni2EkFM4s4xLB_4_CcWk5SjN-pyh0xoe-pH4OO0CxWWzY1fXxsAzYq0dCXwHimF3p_is6GIyH_wvL0yCGd3SFKeBncr_NOpuodwPr7Hr6Zi9YrG8AQqVtp3Jo-jzA_cFS-1WKcAYnA06vt18QxZg"
 domain = url[-1]
+
 #константные переменные
 version = 5.199
 count = 100
 offset = 0
+
 #получаем id группы через запрос
 response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                         params={'access_token': access_token,
@@ -21,11 +23,14 @@ id_group = response.json()['response']['object_id']
 #стартовое и конечное значение в формате unix-времени, тк вводится в fetch_stats только UNIX время
 start_time = '1709286555'
 end_time = '1713174555'
+
+start_time_numeric = int(start_time)
+end_time_numeric = int(end_time)
+
 #перевод во временной промежуток(список) для построения графика
-date_range = pd.date_range(start=pd.to_datetime(start_time, unit='s').date(), end=pd.to_datetime(end_time, unit='s').date())
+#date_range = pd.date_range(start=pd.to_datetime(start_time, unit='s').date(), end=pd.to_datetime(end_time, unit='s').date())
 
-
-
+date_range = pd.date_range(start=pd.to_datetime(start_time_numeric, unit='s').date(), end=pd.to_datetime(end_time_numeric, unit='s').date())
 
 
 def fetch_vk_data(access_token, version, count, offset):
@@ -73,7 +78,8 @@ def fetch_vk_data(access_token, version, count, offset):
                 data_dict['Views'].append(None)
         data_dict['Reposts'].extend([item['reposts']['count'] for item in data])
         data_dict['URL'].extend([url_start + "?w=wall-" + str(id_group) + "_" + str(item['id']) for item in data])
-        data_dict['Date'].extend([datetime.utcfromtimestamp(item['date']).strftime('%Y-%m-%d') for item in data])
+        #data_dict['Date'].extend([datetime.utcfromtimestamp(item['date']).strftime('%Y-%m-%d') for item in data])
+        data_dict['Date'].extend([datetime.fromtimestamp(item['date'], timezone.utc).strftime('%Y-%m-%d') for item in data])
         data_dict['Date_UNIX'].extend([item['date'] for item in data])
         time.sleep(0.01)
 
@@ -176,8 +182,9 @@ def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weigh
     filtered_df = df[(df['Date_UNIX'] >= start_time) & (df['Date_UNIX'] <= end_time)]
 
     # Вычисление популярности постов
-    filtered_df['Popularity'] = (
-                df['Likes'] * like_weight + df['Views'] * view_weight + df['Comments'] * comment_weight)
+    filtered_df.loc[:, 'Popularity'] = (
+            df['Likes'] * like_weight + df['Views'] * view_weight + df['Comments'] * comment_weight
+    )
 
     # Определение самого популярного поста
     most_popular_post = filtered_df.loc[filtered_df['Popularity'].idxmax()]
