@@ -364,8 +364,6 @@ def update_graph(selected_option):
         ]
 
 
-
-
 #ARR
 @app.callback(
     Output('ARR', 'children'),
