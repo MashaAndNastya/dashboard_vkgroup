@@ -81,19 +81,21 @@ app.layout = html.Div([
             ),
 
             #календарь
-            html.Div(id='date-picker-div', style={'display': 'none'}, children=[
+            html.Div(
+                id='date-picker-div',
+                style={'display': 'none'},
+                children=[
                 dcc.DatePickerRange(
                     id='date-picker-range',
                     start_date=date.today(),
-                    end_date_placeholder_text='Выберите дату!',
-                    style={'margin-top': '10px', 'font-size': '10px', 'border-radius': '8px'}
+                    end_date_placeholder_text='Выберите дату!'
                 )
             ]),
 
             html.Div(
                 id='output-dates',
                 children=[],
-                style={'display': 'none'},
+                style={'display': 'none'}
             )
         ],
         className='date_container', style={'grid-column': 'span 6'}),
