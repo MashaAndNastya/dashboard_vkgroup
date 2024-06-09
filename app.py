@@ -75,24 +75,25 @@ app.layout = html.Div([
                     {'label': 'Весь период', 'value': 'all_time'},
                     {'label': 'Последняя неделя', 'value': 'last_week'},
                     {'label': 'Последний месяц', 'value': 'last_month'},
-                    #{'label': 'Выбрать дату', 'value': 'custom_date'}
+                    {'label': 'Выбрать дату', 'value': 'custom_date'}
                 ],
-                value='last_week'
+                value='all_time'
             ),
 
-            # календарь
-            # html.Div(id='date-picker-div', style={'display': 'none'}, children=[
-            #     dcc.DatePickerRange(
-            #         id='date-picker-range',
-            #         start_date=date.today(),
-            #         end_date_placeholder_text='Выберите дату!'
-            #     )
-            # ]),
+            #календарь
+            html.Div(id='date-picker-div', style={'display': 'none'}, children=[
+                dcc.DatePickerRange(
+                    id='date-picker-range',
+                    start_date=date.today(),
+                    end_date_placeholder_text='Выберите дату!',
+                    style={'margin-top': '10px', 'font-size': '10px', 'border-radius': '8px'}
+                )
+            ]),
 
             html.Div(
                 id='output-dates',
                 children=[],
-                style={'display': 'none'}
+                style={'display': 'none'},
             )
         ],
         className='date_container', style={'grid-column': 'span 6'}),
@@ -115,61 +116,60 @@ app.layout = html.Div([
 ], style={'background-color': '#8284bd', 'width': '100%'})
 
 
-# @app.callback(
-#     Output('date-picker-div', 'style'),
-#     Input('radio-items', 'value')
-# )
-# def toggle_date_picker(selected_value):
-#     if selected_value == 'custom_date':
-#         return {'display': 'block'}
-#     else:
-#         return {'display': 'none'}
-#
-#
-# @app.callback(
-#     Output('output-dates', 'children'),
-#     Input('date-picker-range', 'start_date'),
-#     Input('date-picker-range', 'end_date')
-# )
-# def update_output(start_date, end_date):
-#     if start_date and end_date:
-#
-#         # Конвертация строковых дат в объекты datetime
-#         start_time = datetime.fromisoformat(start_date)
-#         end_time = datetime.fromisoformat(end_date)
-#
-#         # Преобразование в формат UNIX
-#         start_time = int(start_time.timestamp())
-#         end_time = int(end_time.timestamp())
-#
-#         return f'Вы выбрали от {start_time} до {end_time}'
-#     return 'Пожалуйста, выберите диапазон дат'
+@app.callback(
+    Output('date-picker-div', 'style'),
+    Input('radio-items', 'value')
+)
+def toggle_date_picker(selected_value):
+    if selected_value == 'custom_date':
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
+
+@app.callback(
+    Output('output-dates', 'children'),
+    [Input('date-picker-range', 'start_date'),
+    Input('date-picker-range', 'end_date')]
+)
+def update_output(start_date, end_date):
+    if start_date and end_date:
+        # Преобразование в формат UNIX
+        start_time = int(datetime.fromisoformat(start_date).timestamp())
+        end_time = int(datetime.fromisoformat(end_date).timestamp())
+
+        return f'Вы выбрали от {start_time} до {end_time}'
+    return 'Пожалуйста, выберите диапазон дат'
 
 
 @app.callback(
     Output('users_activity', 'figure'),
     [Input('radio-items', 'value'),
-
-     ]
+    Input('date-picker-range', 'start_date'),
+    Input('date-picker-range', 'end_date')]
 )
-def update_graph(selected_period):
+def update_graph(selected_period, start_date, end_date):
     df_activity['Date'] = pd.to_datetime(df_activity['Date'])
+
+    filtered_df_activity = df_activity.copy()
 
     int(datetime.strptime(str(date.today()), "%Y-%m-%d").timestamp())
     if selected_period == 'last_week':
         start_time = int((datetime.now() - timedelta(days=7)).timestamp())
+        filtered_df_activity = df_activity[df_activity['Unix'] >= start_time]
+
     elif selected_period == 'last_month':
         start_time = int((datetime.now() - timedelta(days=30)).timestamp())
+        filtered_df_activity = df_activity[df_activity['Unix'] >= start_time]
+
     elif selected_period == 'all_time':
         start_time = 1709286555
+        filtered_df_activity = df_activity[df_activity['Unix'] >= start_time]
 
-
-    # elif selected_period == 'custom_date' and start_date and end_date:
-    #     start_date = datetime.fromisoformat(start_date).date()
-    #     end_date = datetime.fromisoformat(end_date).date()
-    #     filtered_df = df_activity[(df_activity['Date'] >= start_date) & (df_activity['Date'] <= end_date)]
-
-    filtered_df_activity = df_activity[df_activity['Unix'] >= start_time]
+    elif selected_period == 'custom_date' and start_date and end_date:
+        start_time = int(datetime.fromisoformat(start_date).timestamp())
+        end_time = int(datetime.fromisoformat(end_date).timestamp())
+        filtered_df_activity = df_activity[(df_activity['Unix'] >= start_time) & (df_activity['Unix'] <= end_time)]
 
     fig_activity = go.Figure()
     fig_activity.add_trace(
