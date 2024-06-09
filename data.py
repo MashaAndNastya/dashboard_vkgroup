@@ -1,7 +1,9 @@
 import pandas as pd
 import requests
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
+
+
 #Изначальные переменные, потом будут передаваться через поле для ввода
 url_start = 'https://vk.com/dimdimychmusic'
 url = url_start.split('/')
@@ -20,20 +22,17 @@ response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                                 'v': version})
 id_group = response.json()['response']['object_id']
 
-#стартовое и конечное значение в формате unix-времени, тк вводится в fetch_stats только UNIX время
-start_time = '1709286555'
-end_time = '1713174555'
+start_time = '1709251200'
+end_time = (datetime.now()).timestamp()
 
 start_time_numeric = int(start_time)
 end_time_numeric = int(end_time)
 
 #перевод во временной промежуток(список) для построения графика
-#date_range = pd.date_range(start=pd.to_datetime(start_time, unit='s').date(), end=pd.to_datetime(end_time, unit='s').date())
-
 date_range = pd.date_range(start=pd.to_datetime(start_time_numeric, unit='s').date(), end=pd.to_datetime(end_time_numeric, unit='s').date())
 
-
 def fetch_vk_data(access_token, version, count, offset):
+
     data_dict = {
         'ID': [],
         'Text': [],
@@ -45,7 +44,6 @@ def fetch_vk_data(access_token, version, count, offset):
         'Date': [],
         'Date_UNIX': []
     }
-
 
 
     response = requests.get('https://api.vk.com/method/wall.get',
@@ -78,13 +76,12 @@ def fetch_vk_data(access_token, version, count, offset):
                 data_dict['Views'].append(None)
         data_dict['Reposts'].extend([item['reposts']['count'] for item in data])
         data_dict['URL'].extend([url_start + "?w=wall-" + str(id_group) + "_" + str(item['id']) for item in data])
-        #data_dict['Date'].extend([datetime.utcfromtimestamp(item['date']).strftime('%Y-%m-%d') for item in data])
         data_dict['Date'].extend([datetime.fromtimestamp(item['date'], timezone.utc).strftime('%Y-%m-%d') for item in data])
         data_dict['Date_UNIX'].extend([item['date'] for item in data])
         time.sleep(0.01)
 
     df_posts = pd.DataFrame(data_dict)
-    print(df_posts.columns)
+    # print(df_posts.columns)
     return df_posts
 
 
@@ -144,6 +141,7 @@ def fetch_vk_stats(start_time, end_time, access_token, id_group):
     age_sex_df = pd.DataFrame(list(age_sex_data.items()), columns=["sex_age", "count"])
     return likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df
 
+
 #Вызов функции, запись  в переменные и постобработка данных
 likes, copies, hidden, comment, subscribed, unsubscribed, reach, reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df = fetch_vk_stats(start_time, end_time, access_token, id_group)
 count_female = sum(sex_df['f'])
@@ -154,6 +152,7 @@ age_27_30 = age_df[(age_df['age_group'] == '27-30')]['count'].values[0]+age_df[(
 age_35_45 = age_df[(age_df['age_group'] == '35-45')]['count'].values[0]
 age_45_100 = age_df[(age_df['age_group'] == '45-100')]['count'].values[0]
 
+
 #расчёт ARR и ERR
 err_mean = ((sum(likes)+sum(copies)+sum(comment))/sum(reach))*100
 if err_mean<=1:
@@ -162,6 +161,7 @@ elif err_mean>1 and err_mean<=3.5:
     text_advice_err = "По общим стандартам ваш показатель ERR средний, сложно сделать вывод об эффективности вашего сообщества."
 else:
     text_advice_err = "Поздравляем! По общим стандартам ваш показатель ERR высокий."
+
 
 #вычисление самого популярного поста
 df = fetch_vk_data(access_token, version, count, offset)
@@ -193,5 +193,5 @@ def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weigh
 
 
 most_popular_post = find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
-print(date_range)
-print(most_popular_post)
+
+
