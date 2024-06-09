@@ -214,7 +214,6 @@ gender_list = list(get_sex(sex_df))
 # Возраст для круговой диаграммы
 age_list = list(get_age(age_df))
 
-text1_ar = 'Text 1 ARR'
 text1_other = 'Text 1 OTHER'
 header1 = 'Header 1'
 photo1 = 'Photo 1'
@@ -318,7 +317,7 @@ app.layout = html.Div([
         # Самый популярный пост
         html.Div([
             html.P('Самый популярный пост'),
-            html.P('Mama mia mama mama mia mama mia Mama mia mama mama mia mama mia Mama mia mama mama mia mama mia')
+            html.P(most_popular_post)
         ], id='post',
             className='post-container',
             style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 3',
@@ -369,7 +368,6 @@ app.layout = html.Div([
         # AR сообщества
         html.Div([
             html.P('AR сообщества'),
-            html.P(text1_ar),
             html.P(text_ar),
             html.P('Советы:'),
             html.P(get_text_advice_ar(ar_mean))
@@ -470,7 +468,8 @@ def update_graph(selected_period, start_date, end_date):
     [Output('ERR', 'children'),
      Output('AR', 'children'),
      Output('gender-graph', 'figure'),
-     Output('age-graph', 'figure')],
+     Output('age-graph', 'figure'),
+     Output('post', 'children')],
     [Input('radio-items', 'value'),
      Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date')]
@@ -536,6 +535,10 @@ def update_graph(selected_period, start_date, end_date):
             paper_bgcolor='#39344a',
             font_color='#cbc2b9'
         )
+
+        # Находим самый популярный пост
+        most_popular_post_updated = find_most_popular_post(df, start_time_selected, end_time_selected, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
+
 
         # Возвращаем ERR, gender pie chart, age pie chart
         return ([
@@ -645,7 +648,7 @@ def update_graph(selected_period, start_date, end_date):
                     "Экспериментируйте со временем публикации постов. К примеру, пользователи соцсети «ВКонтакте» проявляют самую большую активность с 8:00 до 10:00 (в это время подписчики готовятся к учебе и работе, они с удовольствием почитают легкие развлекательные посты). Следующий период активности — с 12:00 до 15:00 (сейчас можно публиковать серьезные материалы: обзоры товаров, презентации новых продуктов, результаты исследований). Время максимального охвата — с 21:00 до 23:00. Для этого интервала оставьте самые важные и интересные новости: информацию об акциях и скидках, новостях компании.",
                     style={'color': '#f9f9f9', 'font-size': '12px'}),
             ])
-        ], gender_pie_updated, age_pie_updated)
+        ], gender_pie_updated, age_pie_updated, most_popular_post_updated)
 
 
 if __name__ == '__main__':
