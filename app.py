@@ -8,6 +8,8 @@ import pandas as pd
 from data import *
 from datetime import date, datetime, timedelta
 
+app = dash.Dash(__name__, external_stylesheets=['style.css'])
+
 # Функции из data.py
 start_time = '1709251200'
 end_time = str(int(datetime.now().timestamp()))
@@ -71,15 +73,24 @@ date_range = pd.date_range(start=pd.to_datetime(int(start_time), unit='s').date(
 
 # Вызов функции, запись  в переменные и постобработка данных
 likes, copies, hidden, comment, subscribed, unsubscribed, reach, reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df = fetch_vk_stats(start_time, end_time, access_token, id_group)
-count_female = sum(sex_df['f'])
-count_male = sum(sex_df['m'])
+
+
+# Данные для пола
+def get_sex(sex_df):
+    count_female = sum(sex_df['f'])
+    count_male = sum(sex_df['m'])
+    return count_female, count_male
+
 
 # Данные для диаграммы возрастов
-age_12_21 = age_df[(age_df['age_group'] == '12-18')]['count'].values[0]+age_df[(age_df['age_group'] == '18-21')]['count'].values[0]
-age_21_27 = age_df[(age_df['age_group'] == '21-24')]['count'].values[0]+age_df[(age_df['age_group'] == '24-27')]['count'].values[0]
-age_27_30 = age_df[(age_df['age_group'] == '27-30')]['count'].values[0]+age_df[(age_df['age_group'] == '30-35')]['count'].values[0]
-age_35_45 = age_df[(age_df['age_group'] == '35-45')]['count'].values[0]
-age_45_100 = age_df[(age_df['age_group'] == '45-100')]['count'].values[0]
+def get_age(age_df):
+    age_12_21 = age_df[(age_df['age_group'] == '12-18')]['count'].values[0]+age_df[(age_df['age_group'] == '18-21')]['count'].values[0]
+    age_21_27 = age_df[(age_df['age_group'] == '21-24')]['count'].values[0]+age_df[(age_df['age_group'] == '24-27')]['count'].values[0]
+    age_27_30 = age_df[(age_df['age_group'] == '27-30')]['count'].values[0]+age_df[(age_df['age_group'] == '30-35')]['count'].values[0]
+    age_35_45 = age_df[(age_df['age_group'] == '35-45')]['count'].values[0]
+    age_45_100 = age_df[(age_df['age_group'] == '45-100')]['count'].values[0]
+
+    return age_12_21, age_21_27, age_27_30, age_35_45, age_45_100
 
 
 # Расчёт ERR
@@ -91,6 +102,7 @@ def calculate_err_mean(likes, copies, comment, reach):
 err_mean = calculate_err_mean(likes, copies, comment, reach)
 
 
+# Советы по повышению ERR
 def get_text_advice_err(err_mean):
     if err_mean <= 1:
         return "По общим стандартам ваш показатель ERR низкий."
@@ -98,6 +110,25 @@ def get_text_advice_err(err_mean):
         return "По общим стандартам ваш показатель ERR средний, сложно сделать вывод об эффективности вашего сообщества."
     else:
         return "Поздравляем! По общим стандартам ваш показатель ERR высокий."
+
+
+# Расчёт AR
+def calculate_ar_mean(copies, reach):
+    ar_mean_calculated = (sum(copies) / sum(reach)) * 100
+    return ar_mean_calculated
+
+
+ar_mean = calculate_ar_mean(copies, reach)
+
+
+# Советы по повышению AR
+def get_text_advice_ar(ar_mean):
+    if ar_mean <= 1:
+        return "По общим стандартам ваш показатель AR низкий."
+    elif 1 < ar_mean <= 5:
+        return "По общим стандартам ваш показатель AR средний, сложно сделать вывод об эффективности вашего сообщества."
+    else:
+        return "Поздравляем! По общим стандартам ваш показатель AR высокий."
 
 
 # Вычисление самого популярного поста
@@ -174,17 +205,19 @@ fig_dynamic.update_layout(title='User Dynamics', xaxis_title='Date', yaxis_title
 fig_dynamic.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
 
 # Текстовые данные
-text_err = 'Коэффициент охвата (Engagement Rate by Reach) — метрика, которая показывает, сколько людей из тех, что увидели пост, взаимодействовали с ним: комментировали, ставили лайки, делали репосты. Более правильно ERR переводится как коэффициент вовлечённости по охвату.\nКак рассчитать: количество реакций / охват × 100%'
-text_arr = 'Annual Recurring Revenue (ARR) — это регулярный ежегодный доход. \nКак расчитать: Количество клиентов * Средний доход с клиента в месяц'
+text_err = 'Коэффициент охвата (Engagement Rate by Reach) — метрика, которая показывает, сколько людей из тех, что увидели пост, взаимодействовали с ним: комментировали, ставили лайки, делали репосты. Более правильно ERR переводится как коэффициент вовлечённости по охвату.Как рассчитать: (количество реакций / охват) × 100%'
+text_ar = 'В переводе с английского amplification rate означает «скорость распространения». AR характеризует виральность, то есть показывает, понравилась ли публикация подписчикам, и готовы ли они поделиться ей на своей странице. Чем выше коэффициент распространения, тем больше шансов, что пост быстро разойдется по соцсети. Как рассчитать: (количество комментрариев / охват) × 100%'
 
-# Еще какие-то данные
-text1_err = err_mean
-text1_arr = 'Text 1 ARR'
+# Пол для круговой диаграммы
+gender_list = list(get_sex(sex_df))
+
+# Возраст для круговой диаграммы
+age_list = list(get_age(age_df))
+
+text1_ar = 'Text 1 ARR'
 text1_other = 'Text 1 OTHER'
 header1 = 'Header 1'
 photo1 = 'Photo 1'
-gender1 = [count_female, count_male]
-age1 = [age_12_21, age_21_27, age_27_30, age_35_45, age_45_100]
 
 
 # HTML шаблон страницы
@@ -224,7 +257,6 @@ app.layout = html.Div([
 
         ], className='fields_container', style={'grid-column': 'span 6'}),
 
-
         # Выбор периода
         html.Div([
             dcc.RadioItems(
@@ -233,9 +265,11 @@ app.layout = html.Div([
                     {'label': 'Весь период', 'value': 'all_time'},
                     {'label': 'Последняя неделя', 'value': 'last_week'},
                     {'label': 'Последний месяц', 'value': 'last_month'},
-                    {'label': 'Выбрать дату', 'value': 'custom_date'}
+                    {'label': 'Выбрать дату', 'value': 'custom_date'},
                 ],
-                value='all_time'
+                value='all_time',
+                inputClassName='radio-item-container',
+                style={'margin-bottom': '20px'}
             ),
 
             # Календарь
@@ -258,7 +292,6 @@ app.layout = html.Div([
         ],
         className='date_container', style={'grid-column': 'span 6'}),
 
-
         # График users_activity
         html.Div([
             dcc.Graph(
@@ -268,17 +301,19 @@ app.layout = html.Div([
             )
         ], style={'grid-column': 'span 6', 'border-radius': '5px', 'background-color': '#39344a', 'padding': '10px'}),
 
-        # ERR сообщества
+        # Круговая диаграмма М/Ж
         html.Div([
-            html.P('ERR сообщества'),
-            html.P(err_mean),
-            html.P(text_err),
-            html.P('Советы:'),
-            html.P(get_text_advice_err(err_mean))
-        ], id='ERR',
-            className='text-container',
-            style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 3',
-                   'display': 'flex', 'flex-direction': 'column', 'padding': '20px'}),
+            dcc.Graph(
+                id="gender-graph",
+                figure=px.pie(
+                    values=gender_list,
+                    labels=['Male', 'Female'],
+                    title='Пол'
+                ).update_traces(insidetextorientation='radial'),
+                className='dcc_compon'
+            )
+        ], id='gender',
+            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
 
         # Самый популярный пост
         html.Div([
@@ -289,7 +324,6 @@ app.layout = html.Div([
             style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 3',
                    'display': 'flex', 'flex-direction': 'column',  'align-items': 'center', 'padding': '20px'}),
 
-
         # График users_dynamic
         html.Div([
             dcc.Graph(
@@ -299,18 +333,19 @@ app.layout = html.Div([
             )
         ], style={'grid-column': 'span 6', 'border-radius': '5px', 'background-color': '#39344a', 'padding': '10px'}),
 
-        # AR сообщества
+        # Круговая диаграмма возраст
         html.Div([
-            html.P('AR сообщества'),
-            html.P(text1_arr),
-            html.P(text_arr),
-            html.P('Советы:'),
-            html.P('Mama mia mama mama mia mama mia Mama mia mama mama mia mama mia Mama mia mama mama mia mama mia')
-        ], id='ARR',
-            className='text-container',
-            style={'background-color': '#39344a', 'padding': '20px', 'border-radius': '5px', 'grid-column': 'span 3',
-                   'display': 'flex', 'flex-direction': 'column'}),
-
+            dcc.Graph(
+                id="age-graph",
+                figure=px.pie(
+                    values=age_list,
+                    names=['12-21', '21-27', '27-30', '30-45', '45-100'],
+                    title='Возраст'
+                ),
+                className='dcc_compon'
+            )
+        ], id='age',
+            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
 
         # Какие-то еще метрики
         html.Div([
@@ -319,35 +354,29 @@ app.layout = html.Div([
         ], className='text-container',
             style={'background-color': '#333333', 'padding': '20px', 'border-radius': '5px', 'grid-column': 'span 3'}),
 
-
-        # Круговая диаграмма М/Ж
+        # ERR сообщества
         html.Div([
-            dcc.Graph(
-                id="gender-graph",
-                figure=px.pie(
-                    values=gender1,
-                    labels=['Male', 'Female'],
-                    title='Пол'
-                ).update_traces(insidetextorientation='radial'),
-                className='dcc_compon'
-            )
-        ], id='gender',
-            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
+            html.P('ERR сообщества'),
+            html.P(err_mean),
+            html.P(text_err),
+            html.P('Советы:'),
+            html.P(get_text_advice_err(err_mean))
+        ], id='ERR',
+            className='text-container',
+            style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 6',
+                   'display': 'flex', 'flex-direction': 'column', 'padding': '20px'}),
 
-
-        # Круговая диаграмма возраст
+        # AR сообщества
         html.Div([
-            dcc.Graph(
-                id="age-graph",
-                figure=px.pie(
-                    values=age1,
-                    names=['12-21', '21-27', '27-30', '30-45', '45-100'],
-                    title='Возраст'
-                ),
-                className='dcc_compon'
-            )
-        ], id='age',
-            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'})
+            html.P('AR сообщества'),
+            html.P(text1_ar),
+            html.P(text_ar),
+            html.P('Советы:'),
+            html.P(get_text_advice_ar(ar_mean))
+        ], id='AR',
+            className='text-container',
+            style={'background-color': '#39344a', 'padding': '20px', 'border-radius': '5px', 'grid-column': 'span 6',
+                   'display': 'flex', 'flex-direction': 'column'}),
 
     ],
         className='grid-container',
@@ -385,9 +414,10 @@ def update_output(start_date, end_date):
     return 'Пожалуйста, выберите диапазон дат'
 
 
-# User_activity
+# Users_activity & Users_dynamic
 @app.callback(
-    Output('users_activity', 'figure'),
+    [Output('users_activity', 'figure'),
+    Output('users_dynamic', 'figure')],
     [Input('radio-items', 'value'),
     Input('date-picker-range', 'start_date'),
     Input('date-picker-range', 'end_date')]
@@ -396,18 +426,21 @@ def update_graph(selected_period, start_date, end_date):
     global start_time, end_time
     if selected_period == 'last_week':
         start_time = int((datetime.now() - timedelta(days=7)).timestamp())
-        filtered_df_activity = df_activity[df_activity['Unix'] >= start_time]
+        end_time = int(datetime.now().timestamp())
     elif selected_period == 'last_month':
         start_time = int((datetime.now() - timedelta(days=30)).timestamp())
-        filtered_df_activity = df_activity[df_activity['Unix'] >= start_time]
+        end_time = int(datetime.now().timestamp())
     elif selected_period == 'all_time':
         start_time = 1709286555
-        filtered_df_activity = df_activity
+        end_time = int(datetime.now().timestamp())
     elif selected_period == 'custom_date' and start_date and end_date:
         start_time = int(datetime.fromisoformat(start_date).timestamp())
         end_time = int(datetime.fromisoformat(end_date).timestamp())
-        filtered_df_activity = df_activity[(df_activity['Unix'] >= start_time) & (df_activity['Unix'] <= end_time)]
 
+    filtered_df_activity = df_activity[(df_activity['Unix'] >= start_time) & (df_activity['Unix'] <= end_time)]
+    filtered_df_dynamic = df_dynamic[(df_dynamic['Unix'] >= start_time) & (df_dynamic['Unix'] <= end_time)]
+
+    # Обновленные данные для активности пользователей
     fig_activity = go.Figure()
     fig_activity.add_trace(
         go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Likes'], mode='lines+markers', name='Likes'))
@@ -416,15 +449,28 @@ def update_graph(selected_period, start_date, end_date):
     fig_activity.add_trace(
         go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Reposts'], mode='lines+markers', name='Reposts'))
 
+    # Обновленный график активности пользователей
     fig_activity.update_layout(title='Activity', xaxis_title='Date', yaxis_title='Count')
     fig_activity.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
 
-    return fig_activity
+    # Обновленные данные для динамики пользователей
+    fig_dynamic = go.Figure()
+    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach subscribers'], mode='lines+markers',name='Reach subscribers'))
+    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach unique'], mode='lines+markers', name='Reach unique'))
+
+    # Обновленный график динамики пользователей
+    fig_dynamic.update_layout(title='User Dynamics', xaxis_title='Date', yaxis_title='Count')
+    fig_dynamic.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
+
+    return fig_activity, fig_dynamic
 
 
-#ERR
+#ERR, AR, gender & age pie graphs
 @app.callback(
-    Output('ERR', 'children'),
+    [Output('ERR', 'children'),
+     Output('AR', 'children'),
+     Output('gender-graph', 'figure'),
+     Output('age-graph', 'figure')],
     [Input('radio-items', 'value'),
      Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date')]
@@ -433,27 +479,66 @@ def update_graph(selected_period, start_date, end_date):
         if selected_period == 'last_week':
             start_time_selected = int((datetime.now() - timedelta(days=7)).timestamp())
             end_time_selected = int(datetime.now().timestamp())
-            # err_mean = 'text1'
         elif selected_period == 'last_month':
             start_time_selected = int((datetime.now() - timedelta(days=30)).timestamp())
             end_time_selected = int(datetime.now().timestamp())
-            # err_mean = 'text2'
         elif selected_period == 'all_time':
             start_time_selected = 1709286555
             end_time_selected = int(datetime.now().timestamp())
-            # err_mean = 'text3'
         elif selected_period == 'custom_date' and start_date and end_date:
             start_time_selected = int(datetime.fromisoformat(start_date).timestamp())
             end_time_selected = int(datetime.fromisoformat(end_date).timestamp())
-            # err_mean = 'text4'
 
+        # Получаем новые данные с учетом выбранного промежутка времени
         data = fetch_vk_stats(start_time_selected, end_time_selected, access_token, id_group)
+
+        # Собираем нужные данные для ERR & AR
         likes_selected, copies_selected, comment_selected, reach_selected = data[0], data[1], data[3], data[6]
 
+        # Обновляем ERR
         err_mean_updated = calculate_err_mean(likes_selected, copies_selected, comment_selected, reach_selected)
         text_advice_err_updated = get_text_advice_err(err_mean_updated)
 
-        return [
+        # Обновляем AR
+        ar_mean_updated = calculate_ar_mean(copies_selected, reach_selected)
+        text_advice_ar_updated = get_text_advice_ar(ar_mean_updated)
+
+        # Обновляем данные для gender
+        sex_df_selected = data[9]
+        gender_list_updated = list(get_sex(sex_df_selected))
+
+        # Обновляем pie chart для gender
+        gender_pie_updated = px.pie(
+            values=gender_list_updated,
+            names=['Male', 'Female'],
+            title='Пол'
+        ).update_layout(
+            legend_orientation='h',
+            title_x=0.5,
+            plot_bgcolor='#39344a',
+            paper_bgcolor='#39344a',
+            font_color='#cbc2b9'
+        )
+
+        # Обновляем данные для age
+        age_df_selected = data[10]
+        age_list_updated = list(get_age(age_df_selected))
+
+        # Обновляем pie chart для age
+        age_pie_updated = px.pie(
+            values=age_list_updated,
+            names=['12-21', '21-27', '27-30', '30-45', '45-100'],
+            title='Возраст'
+        ).update_layout(
+            legend_orientation='h',
+            title_x=0.5,
+            plot_bgcolor='#39344a',
+            paper_bgcolor='#39344a',
+            font_color='#cbc2b9'
+        )
+
+        # Возвращаем ERR, gender pie chart, age pie chart
+        return ([
             html.P('ERR сообщества',
                     style={'color': '#f9f9f9',
                            'font-size': '24px',
@@ -506,40 +591,61 @@ def update_graph(selected_period, start_date, end_date):
                     "Оптимизируйте базу подписчиков.",
                         style={'color': '#f9f9f9', 'font-size': '12px'}),
             ])
-        ]
+        ],
+        [
+            html.P('AR сообщества',
+                   style={'color': '#f9f9f9',
+                          'font-size': '24px',
+                          'font-weight': 'bold',
+                          'font-family': 'Montserrat.ttf',
+                          'mardin-bottom': '5px',
+                          'text-align': 'center'}
+                   ),
+            html.P(ar_mean_updated,
+                   style={'color': '#f1986c',
+                          'font-size': '34px',
+                          'font-weight': 'bold',
+                          'mardin-top': '5px',
+                          'text-align': 'center'}
+                   ),
+            html.P(text_ar,
+                   style={'color': '#f9f9f9',
+                          'font-size': '12px'}
+                   ),
+            html.P('Советы:',
+                   style={'color': '#f9f9f9',
+                          'font-size': '20px',
+                          'font-weight': 'bold'}
+                   ),
 
+            html.P(text_advice_ar_updated,
+                   style={'color': '#f9f9f9', 'font-size': '12px'}),
 
-
-# User_dynamic
-@app.callback(
-    Output('users_dynamic', 'figure'),
-    [Input('radio-items', 'value'),
-    Input('date-picker-range', 'start_date'),
-    Input('date-picker-range', 'end_date')]
-)
-def update_graph(selected_period, start_date, end_date):
-    global start_time, end_time
-    if selected_period == 'last_week':
-        start_time = int((datetime.now() - timedelta(days=7)).timestamp())
-
-    elif selected_period == 'last_month':
-        start_time = int((datetime.now() - timedelta(days=30)).timestamp())
-
-    elif selected_period == 'all_time':
-        start_time = 1709286555
-
-    elif selected_period == 'custom_date' and start_date and end_date:
-        start_time = int(datetime.fromisoformat(start_date).timestamp())
-        end_time = int(datetime.fromisoformat(end_date).timestamp())
-
-    fig_dynamic = go.Figure()
-    fig_dynamic.add_trace(go.Scatter(x=df_dynamic['Date'], y=df_dynamic['Reach subscribers'], mode='lines+markers', name='Reach subscribers'))
-    fig_dynamic.add_trace(go.Scatter(x=df_dynamic['Date'], y=df_dynamic['Reach unique'], mode='lines+markers', name='Reach unique'))
-
-    fig_dynamic.update_layout(title='User Dynamics', xaxis_title='Date', yaxis_title='Count')
-    fig_dynamic.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
-
-    return fig_dynamic
+            html.P(
+                """Однако общие стандарты бывают обманчивы, лучший способ оценить
+                привлекательность контента — ежемесячно сравнивать текущее значение с AR за предыдущий период.""",
+                style={'color': '#f9f9f9', 'font-size': '12px'}),
+            html.P(
+                "Можете воспользоваться следующими советами для повышения AR:",
+                style={'color': '#f9f9f9', 'font-size': '12px'}),
+            html.Ul([
+                html.Li(
+                    "Размещайте больше полезных информативных постов. Подписчики должны видеть: вы — настоящий профессионал в своей области и вашему мнению можно доверять. ",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.Li(
+                    "Публикуйте разнообразный контент. Чередуйте информационные посты с вовлекающими и развлекательными публикациями.",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.Li(
+                    "Добавляйте в контент-план форматы, которые репостят чаще других (чек-листы, гайды, подборки, карточки). Устраивайте конкурсы и розыгрыши среди подписчиков. ",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.Li(
+                    "Анализируйте контент конкурентов. Посмотрите, какими записями пользователи делятся чаще всего, в каком ключе поданы самые популярные посты, в каком стиле написаны тексты и какие изображения использованы: реальные фотографии, коллажи или мемы.",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.Li(
+                    "Экспериментируйте со временем публикации постов. К примеру, пользователи соцсети «ВКонтакте» проявляют самую большую активность с 8:00 до 10:00 (в это время подписчики готовятся к учебе и работе, они с удовольствием почитают легкие развлекательные посты). Следующий период активности — с 12:00 до 15:00 (сейчас можно публиковать серьезные материалы: обзоры товаров, презентации новых продуктов, результаты исследований). Время максимального охвата — с 21:00 до 23:00. Для этого интервала оставьте самые важные и интересные новости: информацию об акциях и скидках, новостях компании.",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+            ])
+        ], gender_pie_updated, age_pie_updated)
 
 
 if __name__ == '__main__':
