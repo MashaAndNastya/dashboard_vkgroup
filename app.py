@@ -3,18 +3,18 @@ from dash import dcc, html
 from dash.dependencies import Input, Output
 import plotly.express as px
 import plotly.graph_objs as go
-import numpy as np
-import pandas as pd
 from data import *
 from datetime import date, datetime, timedelta
 
-app = dash.Dash(__name__, external_stylesheets=['style.css'])
+app = dash.Dash(__name__)
 
-# Функции из data.py
-start_time = '1709251200'
+
+# Парсинг постов
+df = fetch_vk_data(access_token, version=5.199, count=100, offset=0)
+# Начальное время
+#start_time = df['Date_UNIX'].iloc[-1]+10000
+start_time = '1672562957'
 end_time = str(int(datetime.now().timestamp()))
-
-
 def fetch_vk_stats(start_time, end_time, access_token, id_group):
     # Загрузка всех параметров
     params = {
@@ -22,7 +22,7 @@ def fetch_vk_stats(start_time, end_time, access_token, id_group):
         'group_id': id_group,
         'timestamp_from': start_time,
         'timestamp_to': end_time,
-        'v': version
+        'v': 5.199
     }
 
     # Запрос к апи
@@ -80,8 +80,19 @@ def get_sex(sex_df):
     count_female = sum(sex_df['f'])
     count_male = sum(sex_df['m'])
     return count_female, count_male
-
-
+#топ-5 категорий по половозрастному составу
+def top_5_age_sex_category(age_sex_df):
+    age_sex_df = age_sex_df.sort_values(by=['count'], ascending=False)
+    total_count = age_sex_df['count'].sum()
+    top_5 = []
+    for index, row in age_sex_df.iterrows():
+        if row['count'] != 0 and len(top_5) < 5:
+            sex, age = row['sex_age'].split(';')
+            category = f"{ 'Мужчины' if sex == 'm' else 'Женщины' } {age} лет"
+            percentage = round((row['count'] / total_count) * 100, 3)
+            top_5.append((category, percentage))
+    return top_5
+top_5 = top_5_age_sex_category(age_sex_df)
 # Данные для диаграммы возрастов
 def get_age(age_df):
     age_12_21 = age_df[(age_df['age_group'] == '12-18')]['count'].values[0]+age_df[(age_df['age_group'] == '18-21')]['count'].values[0]
@@ -131,9 +142,8 @@ def get_text_advice_ar(ar_mean):
         return "Поздравляем! По общим стандартам ваш показатель AR высокий."
 
 
-# Вычисление самого популярного поста
-df = fetch_vk_data(access_token, version, count, offset)
 
+#вычисление самого популярного поста
 
 def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2):
     # Преобразование столбца Date_UNIX в числовой тип данных
@@ -156,14 +166,10 @@ def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weigh
 
     # Определение самого популярного поста
     most_popular_post = filtered_df.loc[filtered_df['Popularity'].idxmax()]
-
     return most_popular_post
 
 
 most_popular_post = find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
-
-
-# Данные для div'ов
 
 # Данные активности: лайки, комментарии, репосты
 data_activity = {
@@ -214,9 +220,16 @@ gender_list = list(get_sex(sex_df))
 # Возраст для круговой диаграммы
 age_list = list(get_age(age_df))
 
-text1_other = 'Text 1 OTHER'
-header1 = 'Header 1'
-photo1 = 'Photo 1'
+#подготовка списка категорий целевой аудитории к выводу на экран
+list_items = ""
+for entry in top_5:
+    list_items += f"<li style='color: #f9f9f9; font-size: 16px;'>{entry[0]} - {entry[1]:.3f}%</li>\n"
+
+text_target_audience = """
+Этот элемент дашборда поможет вам сделать выводы о вашей целевой аудитории. 
+Исходя из этих данных, вы сможете регулировать и корректировать свой контент, закупать таргетированную рекламу и развивать своё сообщество в соответствии с вашими целями.
+"""
+
 
 
 # HTML шаблон страницы
@@ -316,12 +329,18 @@ app.layout = html.Div([
 
         # Самый популярный пост
         html.Div([
-            html.P('Самый популярный пост'),
-            html.P(most_popular_post)
+            html.P('Самый популярный пост', style={'color': '#FFFFFF', 'fontWeight': 'bold', 'fontSize': '20px'}),
+            html.Img(src=most_popular_post['Photo'], style={'max-width': '100%', 'border-radius': '5px'}),
+            html.P(most_popular_post['Text'], style={'color': '#FFFFFF', 'margin-top': '10px'}),
+            html.P(
+                f"👍 {most_popular_post['Likes']}   💬 {most_popular_post['Comments']}   👀 {most_popular_post['Views']}   🔄 {most_popular_post['Reposts']}",
+                style={'color': '#FFFFFF', 'margin-top': '10px'}),
+            html.A('Ссылка на пост', href=most_popular_post['URL'], target='_blank',
+                   style={'color': '#1DA1F2', 'margin-top': '10px', 'textDecoration': 'none'})
         ], id='post',
             className='post-container',
             style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 3',
-                   'display': 'flex', 'flex-direction': 'column',  'align-items': 'center', 'padding': '20px'}),
+                   'display': 'flex', 'flex-direction': 'column', 'align-items': 'center', 'padding': '20px'}),
 
         # График users_dynamic
         html.Div([
@@ -346,12 +365,17 @@ app.layout = html.Div([
         ], id='age',
             style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
 
-        # Какие-то еще метрики
+        # Топ целевой аудитории
         html.Div([
-            html.H6("Random Text Container 1", style={'color': '#FFFFFF', 'fontWeight': 'bold'}),
-            html.P(text1_other)
-        ], className='text-container',
-            style={'background-color': '#333333', 'padding': '20px', 'border-radius': '5px', 'grid-column': 'span 3'}),
+            html.P("Основные категории целевой аудитории", style={'color': '#FFFFFF', 'fontWeight': 'bold'}),
+            html.P(text_target_audience, style={'color': '#f9f9f9', 'font-size': '16px'}),
+            html.Ol(
+                children=dcc.Markdown(list_items, dangerously_allow_html=True)
+                # Добавляем элементы списка, обработанные как HTML
+            )
+        ], id ='target_audience', className='text-container',
+            style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 3',
+                   'display': 'flex', 'flex-direction': 'column', 'padding': '20px'}),
 
         # ERR сообщества
         html.Div([
@@ -410,18 +434,21 @@ def update_output(start_date, end_date):
 
         return f'Вы выбрали от {start_time} до {end_time}'
     return 'Пожалуйста, выберите диапазон дат'
-
-
 # Users_activity & Users_dynamic
+
 @app.callback(
     [Output('users_activity', 'figure'),
-    Output('users_dynamic', 'figure')],
+     Output('users_dynamic', 'figure')],
     [Input('radio-items', 'value'),
-    Input('date-picker-range', 'start_date'),
-    Input('date-picker-range', 'end_date')]
+     Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
 )
 def update_graph(selected_period, start_date, end_date):
-    global start_time, end_time
+    # Инициализация временных промежутков
+    start_time = None
+    end_time = None
+
+    # Установка временных промежутков в зависимости от выбранного периода
     if selected_period == 'last_week':
         start_time = int((datetime.now() - timedelta(days=7)).timestamp())
         end_time = int(datetime.now().timestamp())
@@ -435,46 +462,55 @@ def update_graph(selected_period, start_date, end_date):
         start_time = int(datetime.fromisoformat(start_date).timestamp())
         end_time = int(datetime.fromisoformat(end_date).timestamp())
 
+    # Проверка, что временные промежутки были установлены корректно
+    if start_time is None or end_time is None:
+        return go.Figure(), go.Figure()  # Возвращаем пустые фигуры в случае ошибки
+
+    # Фильтрация данных по временным промежуткам
     filtered_df_activity = df_activity[(df_activity['Unix'] >= start_time) & (df_activity['Unix'] <= end_time)]
     filtered_df_dynamic = df_dynamic[(df_dynamic['Unix'] >= start_time) & (df_dynamic['Unix'] <= end_time)]
 
     # Обновленные данные для активности пользователей
     fig_activity = go.Figure()
     fig_activity.add_trace(
-        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Likes'], mode='lines+markers', name='Likes'))
+        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Likes'], mode='lines+markers', name='Лайки'))
     fig_activity.add_trace(
-        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Comments'], mode='lines+markers', name='Comments'))
+        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Comments'], mode='lines+markers', name='Комментарии'))
     fig_activity.add_trace(
-        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Reposts'], mode='lines+markers', name='Reposts'))
+        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Reposts'], mode='lines+markers', name='Репосты'))
 
     # Обновленный график активности пользователей
-    fig_activity.update_layout(title='Activity', xaxis_title='Date', yaxis_title='Count')
+    fig_activity.update_layout(title='Aктивность пользователей', xaxis_title='Дата', yaxis_title='Количество')
     fig_activity.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
 
     # Обновленные данные для динамики пользователей
     fig_dynamic = go.Figure()
-    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach subscribers'], mode='lines+markers',name='Reach subscribers'))
-    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach unique'], mode='lines+markers', name='Reach unique'))
+    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach subscribers'], mode='lines+markers', name='Охваты по подписчикам'))
+    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach unique'], mode='lines+markers', name='Уникальные охваты'))
 
     # Обновленный график динамики пользователей
-    fig_dynamic.update_layout(title='User Dynamics', xaxis_title='Date', yaxis_title='Count')
+    fig_dynamic.update_layout(title='Динамика охватов', xaxis_title='Дата', yaxis_title='Количество')
     fig_dynamic.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
 
     return fig_activity, fig_dynamic
 
 
-#ERR, AR, gender & age pie graphs
+#ERR, AR, gender & age pie graphs, most popular post
 @app.callback(
     [Output('ERR', 'children'),
      Output('AR', 'children'),
      Output('gender-graph', 'figure'),
      Output('age-graph', 'figure'),
-     Output('post', 'children')],
+     Output('post', 'children'),
+     Output('target_audience', 'children')],
     [Input('radio-items', 'value'),
      Input('date-picker-range', 'start_date'),
      Input('date-picker-range', 'end_date')]
 )
 def update_graph(selected_period, start_date, end_date):
+        # Инициализация переменных по умолчанию
+        start_time_selected = None
+        end_time_selected = None
         if selected_period == 'last_week':
             start_time_selected = int((datetime.now() - timedelta(days=7)).timestamp())
             end_time_selected = int(datetime.now().timestamp())
@@ -535,12 +571,27 @@ def update_graph(selected_period, start_date, end_date):
             paper_bgcolor='#39344a',
             font_color='#cbc2b9'
         )
-
-        # Находим самый популярный пост
+        # Обновляем самый популярный пост
         most_popular_post_updated = find_most_popular_post(df, start_time_selected, end_time_selected, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
+        post_card_updated = [
+            html.P('Самый популярный пост', style={'color': '#FFFFFF', 'fontWeight': 'bold', 'fontSize': '20px'}),
+            html.Img(src=most_popular_post_updated['Photo'], style={'max-width': '100%', 'border-radius': '5px'}),
+            html.P(most_popular_post_updated['Text'], style={'color': '#FFFFFF', 'margin-top': '10px'}),
+            html.P(
+                f"👍 {most_popular_post_updated['Likes']}   💬 {most_popular_post_updated['Comments']}   👀 {most_popular_post_updated['Views']}   🔄 {most_popular_post_updated['Reposts']}",
+                style={'color': '#FFFFFF', 'margin-top': '10px'}
+            ),
+            html.A('Ссылка на пост', href=most_popular_post_updated['URL'], target='_blank',
+                   style={'color': '#1DA1F2', 'margin-top': '10px', 'textDecoration': 'none'})
+        ]
+        #Обновляем целевую аудиторию
+        age_sex_df_selected = data[11]
+        top_5_updated = top_5_age_sex_category(age_sex_df_selected)
+        list_items_updated = ""
+        for entry in top_5_updated:
+            list_items_updated += f"<li style='color: #f9f9f9; font-size: 16px;'>{entry[0]} - {entry[1]:.3f}%</li>\n"
 
-
-        # Возвращаем ERR, gender pie chart, age pie chart
+        # Возвращаем ERR, gender pie chart, age pie chart, самый популярный пост, целевую аудиторию
         return ([
             html.P('ERR сообщества',
                     style={'color': '#f9f9f9',
@@ -648,9 +699,17 @@ def update_graph(selected_period, start_date, end_date):
                     "Экспериментируйте со временем публикации постов. К примеру, пользователи соцсети «ВКонтакте» проявляют самую большую активность с 8:00 до 10:00 (в это время подписчики готовятся к учебе и работе, они с удовольствием почитают легкие развлекательные посты). Следующий период активности — с 12:00 до 15:00 (сейчас можно публиковать серьезные материалы: обзоры товаров, презентации новых продуктов, результаты исследований). Время максимального охвата — с 21:00 до 23:00. Для этого интервала оставьте самые важные и интересные новости: информацию об акциях и скидках, новостях компании.",
                     style={'color': '#f9f9f9', 'font-size': '12px'}),
             ])
-        ], gender_pie_updated, age_pie_updated, most_popular_post_updated)
+        ], gender_pie_updated, age_pie_updated, post_card_updated,
+                [
+                    html.P("Основные категории целевой аудитории", style={'color': '#FFFFFF', 'fontWeight': 'bold'}),
+                    html.P(text_target_audience, style={'color': '#f9f9f9', 'font-size': '16px'}),
+                    html.Ol(children=dcc.Markdown(list_items_updated, dangerously_allow_html=True))
+                ]
+        )
+
 
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
 
