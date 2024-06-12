@@ -144,7 +144,6 @@ def get_text_advice_ar(ar_mean):
 
 
 #вычисление самого популярного поста
-
 def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2):
     # Преобразование столбца Date_UNIX в числовой тип данных
     df['Date_UNIX'] = pd.to_numeric(df['Date_UNIX'], errors='coerce')
