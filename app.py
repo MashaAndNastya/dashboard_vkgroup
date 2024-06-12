@@ -12,23 +12,25 @@ from datetime import datetime, timezone, date, timedelta
 import webbrowser
 import os
 from threading import Timer
+access_token = None
+url_start = None
 
-# Создаем главное окно Tkinter
-root = tk.Tk()
-root.withdraw()
+def input_credentials():
+    global access_token, url_start
+    if not access_token or not url_start:
+        root = tk.Tk()
+        root.withdraw()
 
-# Запрашиваем токен и URL через всплывающее окно
-access_token = simpledialog.askstring("Token", "Введите ваш токен:")
-url_start = simpledialog.askstring("URL", "Введите URL:")
+        access_token = simpledialog.askstring("Token", "Введите ваш токен:")
+        url_start = simpledialog.askstring("URL", "Введите URL:")
 
-# Проверка на заполненность полей
-if not access_token or not url_start:
-    messagebox.showwarning("Ошибка", "Необходимо ввести токен и URL для запуска приложения!")
+        if not access_token or not url_start:
+            messagebox.showwarning("Ошибка", "Необходимо ввести токен и URL для запуска приложения!")
 
 
 
 app = dash.Dash(__name__)
-
+input_credentials()
 url = url_start.split('/')
 domain = url[-1]
 #получаем id группы через запрос
@@ -335,7 +337,7 @@ app.layout = html.Div([
                        style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
                 html.Div(url_start, id='link_display',
                          style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
-                                'border': '1px solid #ccc'}),
+                                'border': '1px solid #ccc', 'background-color': 'white'}),
             ], className='row',
                 style={'display': 'flex', 'flex-direction': 'column', 'margin-bottom': '10px',
                        'border-radius': '20px', }),
@@ -345,12 +347,12 @@ app.layout = html.Div([
                 html.P(['Токен, который вы ввели'],
                        className='token_header',
                        style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
-                html.Div('Ваш_секретный_токен', id='token_display',
+                html.Div('******', id='token_display',  # Скрываем токен изначально
                          style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
-                                'border': '1px solid #ccc'}),
-                html.Button('Показать токен', id='show_token_button', n_clicks=0,
+                                'border': '1px solid #ccc', 'background-color': 'white'}),
+                html.Button('Показать токен', id='toggle_token_button', n_clicks=0,
                             style={"padding": "10px", "border-radius": "10px", "cursor": "pointer"})
-            ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
+            ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'})
         ], className='fields_container', style={'grid-column': 'span 6'}),
 
 
@@ -493,18 +495,16 @@ app.layout = html.Div([
 ], style={'background-color': '#8284bd', 'width': '100%'})
 
 # Коллбэк для показа или сокрытия токена
-# Коллбэк для показа или сокрытия токена
 @app.callback(
-    Output('token_display', 'children'),
-    [Input('show_token_button', 'n_clicks')],
-    [State('show_token_button', 'children')],
-    prevent_initial_call=True
-)
-def toggle_token(n_clicks, button_text):
-    if button_text == 'Показать токен':
-        return access_token
+        Output('token_display', 'children'),
+        Output('toggle_token_button', 'children'),
+        [Input('toggle_token_button', 'n_clicks')],
+    )
+def toggle_token(n_clicks):
+    if n_clicks % 2 == 0:
+        return '******', 'Показать токен'
     else:
-        return '******'
+        return access_token, 'Скрыть токен'
 # Открытие custom_date поля
 @app.callback(
     Output('date-picker-div', 'style'),
