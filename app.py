@@ -26,12 +26,11 @@ if not access_token or not url_start:
     messagebox.showwarning("Ошибка", "Необходимо ввести токен и URL для запуска приложения!")
 
 
-
 app = dash.Dash(__name__)
 
 url = url_start.split('/')
 domain = url[-1]
-#получаем id группы через запрос
+# Получаем id группы через запрос
 response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                         params={'access_token': access_token,
                                 'screen_name': domain,
