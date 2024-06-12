@@ -3,7 +3,7 @@ from dialog_window import app, url_start
 from items_data import fig_activity, gender_list, most_popular_post, age_list, fig_dynamic, list_items, err_mean, ar_mean
 from datetime import datetime, timedelta
 import plotly.express as px
-from dash import html, dcc
+from dash import html, dcc, dash
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 from dialog_window import access_token
@@ -13,6 +13,7 @@ from items_data import df_activity, df_dynamic, calculate_err_mean, get_text_adv
 from strings import text_err, text_ar, text_target_audience
 
 
+
 app_layout = html.Div([
     html.Div([
 
@@ -20,8 +21,9 @@ app_layout = html.Div([
         html.Div([
             html.P([
                 'Дашборд для анализа статистики ВК сообщества',
-            ], className='page_header', style={'grid-column': 'span 12', 'margin-bottom': '40px', 'margin-top': '40px',
-                      'font-size': '36px', 'font-style': 'bold'})
+            ], className='page_header',
+                style={'grid-column': 'span 2', 'margin-bottom': '40px', 'margin-left': '20px', 'margin-right': '40px',
+                      'font-size': '32px', 'color': '#fff'})
         ]),
 
         # Поля ввода контейнер
@@ -31,16 +33,17 @@ app_layout = html.Div([
             html.Div([
                 html.P(['Ссылка на сообщество, по которому представлена статистика'],
                        className='link_header',
-                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
+                       style={'color': '#fff', 'font-style': 'bold', 'font-size': '20px', 'margin-bottom': '10px'}),
 
                 html.Div([
                     html.Div(url_start, id='link_display',
                              style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
-                                    'border': '1px solid #ccc', 'color': '#fff'}),
+                                    'border': '1px solid #fff', 'color': '#b6c5de'}),
                     html.Button('Копировать ссылку', id='copy_link_button',
-                                    style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '10px', 'border-radius': '10px', 'cursor': 'pointer',
+                                    style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '10px',
+                                           'border-radius': '10px', 'cursor': 'pointer',
                                            'background-color': '#39344a', 'color': '#fff'}),
-                    dcc.Clipboard(target_id="token_display", style={"display": "none"})
+                    dcc.Clipboard(target_id="token_display", id='clipboard', style={"display": "none"})
                 ], style={'margin-bottom': '6px', 'display': 'flex', 'flex-direction': 'row',
                           'justify-content': 'spread-inside'}),
             ], className='row',
@@ -51,11 +54,11 @@ app_layout = html.Div([
             html.Div([
                 html.P(['Токен, который вы ввели'],
                        className='token_header',
-                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
+                       style={'font-style': 'bold', 'font-size': '20px', 'margin-bottom': '10px', 'color': '#fff'}),
                 html.Div([
                     html.Div('*****', id='token_display',
                              style={'width': '95%', 'padding': '12px', 'font-size': '18px', 'border-radius': '10px',
-                                    'border': '1px solid #ccc', 'color': '#fff',
+                                    'border': '1px solid #fff', 'color': '#b6c5de',
                                     'overflow': 'hidden', 'white-space': 'nowrap', 'text-overflow': 'ellipsis'}),
                     html.Button('Копировать токен', id='copy_token_button',
                                 style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '12px', 'border-radius': '10px', 'cursor': 'pointer',
@@ -67,14 +70,14 @@ app_layout = html.Div([
                             style={"padding": "10px", "border-radius": "10px", "cursor": "pointer",
                                    'background-color': '#39344a', 'color': '#fff'})
             ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
-        ], className='fields_container', style={'grid-column': 'span 7', 'padding-right': '20px'}),
+        ], className='fields_container', style={'grid-column': 'span 7', 'padding-right': '20px', 'margin-right': '40px'}),
 
 
         # Выбор периода
         html.Div([
             html.P(['Ссылка на сообщество, по которому представлена статистика'],
                        className='link_header',
-                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
+                       style={'font-style': 'bold', 'font-size': '20px', 'margin-bottom': '10px', 'color': '#fff'}),
 
             # Радиокнопки
             dcc.RadioItems(
@@ -87,7 +90,7 @@ app_layout = html.Div([
                 ],
                 value='all_time',
                 inputClassName='radio-item-container',
-                style={'margin-bottom': '20px', 'font': ('Montserrat', '18px')}
+                style={'margin-bottom': '20px', 'font': ('Montserrat', '18px'), 'color': '#fff'}
             ),
 
             # Календарь
@@ -108,7 +111,7 @@ app_layout = html.Div([
                 style={'display': 'none'}
             )
         ],
-        className='date_container', style={'grid-column': 'span 5'}),
+        className='date_container', style={'grid-column': 'span 3'}),
 
         # График users_activity
         html.Div([
@@ -136,7 +139,8 @@ app_layout = html.Div([
         # Самый популярный пост
         html.Div([
             html.P('Самый популярный пост', style={'color': '#FFFFFF', 'fontWeight': 'bold', 'fontSize': '20px'}),
-            html.Img(src=most_popular_post['Photo'], style={'max-width': '100%', 'border-radius': '5px'}),
+            html.Img(src=most_popular_post['Photo'], style={'max-width': '90%', 'border-radius': '5px',
+                                                            'margin-bottom': '10px'}),
             html.P(most_popular_post['Text'], style={'color': '#FFFFFF', 'margin-top': '10px'}),
             html.P(
                 f"👍 {most_popular_post['Likes']}   💬 {most_popular_post['Comments']}   👀 {most_popular_post['Views']}   🔄 {most_popular_post['Reposts']}",
@@ -205,15 +209,16 @@ app_layout = html.Div([
             className='text-container',
             style={'background-color': '#39344a', 'padding': '20px', 'border-radius': '5px', 'grid-column': 'span 6',
                    'display': 'flex', 'flex-direction': 'column'}),
-
     ],
         className='grid-container',
         style={'background-color': '#8459822', 'display': 'grid', 'grid-template-columns': 'repeat(12, 1fr)',
-               'grid-gap': '20px', 'padding': '20px'})
+               'grid-gap': '20px', 'padding': '20px', 'padding-top': '40px', 'padding-left': '20px',
+               'padding-right': '20px'})
 
 ], style={'background-color': '#8284bd', 'width': '100%'})
 
 
+# Показать/скрыть токен
 @app.callback(
         Output('token_display', 'children'),
         Output('show_token_button', 'children'),
