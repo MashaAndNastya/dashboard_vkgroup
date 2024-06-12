@@ -16,6 +16,14 @@ from strings import text_err, text_ar, text_target_audience
 app_layout = html.Div([
     html.Div([
 
+        # Заголовок страницы
+        html.Div([
+            html.P([
+                'Дашборд для анализа статистики ВК сообщества',
+            ], className='page_header', style={'grid-column': 'span 12', 'margin-bottom': '40px', 'margin-top': '40px',
+                      'font-size': '36px', 'font-style': 'bold'})
+        ]),
+
         # Поля ввода контейнер
         html.Div([
 
@@ -46,11 +54,11 @@ app_layout = html.Div([
                        style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
                 html.Div([
                     html.Div('*****', id='token_display',
-                             style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
+                             style={'width': '95%', 'padding': '12px', 'font-size': '18px', 'border-radius': '10px',
                                     'border': '1px solid #ccc', 'color': '#fff',
                                     'overflow': 'hidden', 'white-space': 'nowrap', 'text-overflow': 'ellipsis'}),
                     html.Button('Копировать токен', id='copy_token_button',
-                                style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '10px', 'border-radius': '10px', 'cursor': 'pointer',
+                                style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '12px', 'border-radius': '10px', 'cursor': 'pointer',
                                        'background-color': '#39344a', 'color': '#fff'}),
                     dcc.Clipboard(target_id="token_display", style={"display": "none"})
                 ], style={'margin-bottom': '6px', 'display': 'flex', 'flex-direction': 'row',
@@ -59,7 +67,7 @@ app_layout = html.Div([
                             style={"padding": "10px", "border-radius": "10px", "cursor": "pointer",
                                    'background-color': '#39344a', 'color': '#fff'})
             ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
-        ], className='fields_container', style={'grid-column': 'span 6'}),
+        ], className='fields_container', style={'grid-column': 'span 7', 'padding-right': '20px'}),
 
 
         # Выбор периода
@@ -79,7 +87,7 @@ app_layout = html.Div([
                 ],
                 value='all_time',
                 inputClassName='radio-item-container',
-                style={'margin-bottom': '20px'}
+                style={'margin-bottom': '20px', 'font': ('Montserrat', '18px')}
             ),
 
             # Календарь
@@ -100,7 +108,7 @@ app_layout = html.Div([
                 style={'display': 'none'}
             )
         ],
-        className='date_container', style={'grid-column': 'span 6'}),
+        className='date_container', style={'grid-column': 'span 5'}),
 
         # График users_activity
         html.Div([

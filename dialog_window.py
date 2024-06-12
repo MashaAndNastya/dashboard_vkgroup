@@ -8,6 +8,20 @@ from dash import dash
 root = tk.Tk()
 root.withdraw()
 
+dialog_options = {
+    'title': 'Введите данные',
+    'prompt': '',
+    'background': '#736595',  # цвет фона
+    'font': ('Montserrat', 12)  # шрифт и размер
+}
+
+
+def custom_dialog(prompt):
+    dialog_options['prompt'] = prompt
+    dialog = simpledialog._QueryString(root, **dialog_options)
+    return dialog.result
+
+
 # Запрашиваем токен и URL через всплывающее окно
 access_token = simpledialog.askstring("Token", "Введите ваш токен:")
 url_start = simpledialog.askstring("URL", "Введите URL:")
