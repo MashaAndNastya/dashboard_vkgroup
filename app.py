@@ -28,17 +28,17 @@ def input_credentials():
             messagebox.showwarning("Ошибка", "Необходимо ввести токен и URL для запуска приложения!")
 
 
-
 app = dash.Dash(__name__)
 input_credentials()
 url = url_start.split('/')
 domain = url[-1]
-#получаем id группы через запрос
+# Получаем id группы через запрос
 response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                         params={'access_token': access_token,
                                 'screen_name': domain,
                                 'v': 5.199})
 id_group = response.json()['response']['object_id']
+
 
 def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
 
@@ -233,7 +233,6 @@ def get_text_advice_ar(ar_mean):
 
 
 #вычисление самого популярного поста
-
 def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2):
     # Преобразование столбца Date_UNIX в числовой тип данных
     df['Date_UNIX'] = pd.to_numeric(df['Date_UNIX'], errors='coerce')

@@ -3,6 +3,7 @@ import requests
 import time
 from datetime import datetime, timezone, date, timedelta
 
+from app import url_start, access_token
 
 #Изначальные переменные, потом будут передаваться через поле для ввода
 #url_start = 'https://vk.com/dimdimychmusic'
