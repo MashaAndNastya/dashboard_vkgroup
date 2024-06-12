@@ -1,20 +1,107 @@
 import dash
 from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import plotly.express as px
 import plotly.graph_objs as go
-from data import *
-from datetime import date, datetime, timedelta
+import tkinter as tk
+from tkinter import simpledialog, messagebox
+import requests
+import time
+import pandas as pd
+from datetime import datetime, timezone, date, timedelta
+import webbrowser
+import os
+from threading import Timer
+
+# Создаем главное окно Tkinter
+root = tk.Tk()
+root.withdraw()
+
+# Запрашиваем токен и URL через всплывающее окно
+access_token = simpledialog.askstring("Token", "Введите ваш токен:")
+url_start = simpledialog.askstring("URL", "Введите URL:")
+
+# Проверка на заполненность полей
+if not access_token or not url_start:
+    messagebox.showwarning("Ошибка", "Необходимо ввести токен и URL для запуска приложения!")
+
+
 
 app = dash.Dash(__name__)
 
+url = url_start.split('/')
+domain = url[-1]
+#получаем id группы через запрос
+response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
+                        params={'access_token': access_token,
+                                'screen_name': domain,
+                                'v': 5.199})
+id_group = response.json()['response']['object_id']
 
+def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
+
+    data_dict = {
+        'ID': [],
+        'Text': [],
+        'Likes': [],
+        'Comments': [],
+        'Views': [],
+        'Reposts': [],
+        'URL': [],
+        'Date': [],
+        'Date_UNIX': [],
+        'Photo': []
+    }
+
+
+    response = requests.get('https://api.vk.com/method/wall.get',
+                            params={'access_token': access_token,
+                                    'v': 5.199,
+                                    'domain': domain,
+                                    'count': count,
+                                    'offset': offset})
+
+    data_start = response.json()
+    count_posts = data_start['response']['count']
+    for i in range(0, count_posts, 100):
+        response = requests.get('https://api.vk.com/method/wall.get',
+                                params={'access_token': access_token,
+                                        'v': version,
+                                        'domain': domain,
+                                        'count': count,
+                                        'offset': offset})
+        data = response.json()['response']['items']
+        offset += 100
+        data_dict['ID'].extend([item['id'] for item in data])
+        data_dict['Likes'].extend([item['likes']['count'] for item in data])
+        data_dict['Text'].extend([item['text'] for item in data])
+        data_dict['Comments'].extend([item['comments']['count'] for item in data])
+
+        for item in data:
+            if 'views' in item:
+                data_dict['Views'].append(item['views']['count'])
+            else:
+                data_dict['Views'].append(None)
+        data_dict['Reposts'].extend([item['reposts']['count'] for item in data])
+        data_dict['URL'].extend([url_start + "?w=wall-" + str(id_group) + "_" + str(item['id']) for item in data])
+        data_dict['Date'].extend([datetime.fromtimestamp(item['date'], timezone.utc).strftime('%Y-%m-%d') for item in data])
+        data_dict['Date_UNIX'].extend([item['date'] for item in data])
+        for item in data:
+            if 'attachments' in item and item['attachments'] and item['attachments'][0]['type'] == 'photo':
+                data_dict['Photo'].append(item['attachments'][0]['photo']['sizes'][-1]['url'])
+            else:
+                data_dict['Photo'].append("No photo")
+        time.sleep(0.01)
+
+    df_posts = pd.DataFrame(data_dict)
+    return df_posts
 # Парсинг постов
 df = fetch_vk_data(access_token, version=5.199, count=100, offset=0)
 # Начальное время
 #start_time = df['Date_UNIX'].iloc[-1]+10000
 start_time = '1672562957'
 end_time = str(int(datetime.now().timestamp()))
+
 def fetch_vk_stats(start_time, end_time, access_token, id_group):
     # Загрузка всех параметров
     params = {
@@ -231,8 +318,8 @@ text_target_audience = """
 
 
 
-# HTML шаблон страницы
-app = dash.Dash(__name__)
+# # HTML шаблон страницы
+# app = dash.Dash(__name__)
 
 app.layout = html.Div([
     html.Div([
@@ -242,31 +329,29 @@ app.layout = html.Div([
 
             # Поле для ссылки
             html.Div([
-                html.P(['Введите ссылку на сообщество'],
-                        className='link_header', style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
-                dcc.Textarea(
-                    id='link_textarea',
-                    placeholder='Ссылка на сообщество',
-                    style={'width': '95%', 'height': '20px', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px', 'resize': 'none', 'overflow': 'hidden'},
-                    className='link_textarea',
-                )
+                html.P(['Ссылка на сообщество, по которому представлена статистика'],
+                       className='link_header',
+                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
+                html.Div(url_start, id='link_display',
+                         style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
+                                'border': '1px solid #ccc'}),
             ], className='row',
-                style={'display': 'flex', 'flex-direction': 'column', 'margin-bottom': '10px', 'border-radius': '20px',}),
+                style={'display': 'flex', 'flex-direction': 'column', 'margin-bottom': '10px',
+                       'border-radius': '20px', }),
 
-            # Поле для токена
+            # Поле для токена (с кнопкой)
             html.Div([
-                html.P(['Введите Ваш токен'],
-                        className='token_header', style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
-                dcc.Textarea(
-                    id='token_textarea',
-                    placeholder='Ваш токен',
-                    style={'width': '95%', 'height': '20px', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px', 'resize': 'none', 'overflow': 'hidden'},
-                    className='token_textarea',
-                )
-            ], className='row',
-                style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
-
+                html.P(['Токен, который вы ввели'],
+                       className='token_header',
+                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
+                html.Div('Ваш_секретный_токен', id='token_display',
+                         style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
+                                'border': '1px solid #ccc'}),
+                html.Button('Показать токен', id='show_token_button', n_clicks=0,
+                            style={"padding": "10px", "border-radius": "10px", "cursor": "pointer"})
+            ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
         ], className='fields_container', style={'grid-column': 'span 6'}),
+
 
         # Выбор периода
         html.Div([
@@ -406,7 +491,19 @@ app.layout = html.Div([
 
 ], style={'background-color': '#8284bd', 'width': '100%'})
 
-
+# Коллбэк для показа или сокрытия токена
+# Коллбэк для показа или сокрытия токена
+@app.callback(
+    Output('token_display', 'children'),
+    [Input('show_token_button', 'n_clicks')],
+    [State('show_token_button', 'children')],
+    prevent_initial_call=True
+)
+def toggle_token(n_clicks, button_text):
+    if button_text == 'Показать токен':
+        return access_token
+    else:
+        return '******'
 # Открытие custom_date поля
 @app.callback(
     Output('date-picker-div', 'style'),
@@ -708,7 +805,17 @@ def update_graph(selected_period, start_date, end_date):
 
 
 
+def open_browser():
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):
+        webbrowser.open_new('http://127.0.0.1:1222/')
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    Timer(1, open_browser).start()
+    app.run_server(debug=True, port=1222)
+
+
+
+
+
+
 
 
