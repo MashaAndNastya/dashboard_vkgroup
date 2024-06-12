@@ -23,24 +23,41 @@ app_layout = html.Div([
             html.Div([
                 html.P(['Ссылка на сообщество, по которому представлена статистика'],
                        className='link_header',
-                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
-                html.Div(url_start, id='link_display',
-                         style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
-                                'border': '1px solid #ccc'}),
+                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
+
+                html.Div([
+                    html.Div(url_start, id='link_display',
+                             style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
+                                    'border': '1px solid #ccc', 'color': '#fff'}),
+                    html.Button('Копировать ссылку', id='copy_link_button',
+                                    style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '10px', 'border-radius': '10px', 'cursor': 'pointer',
+                                           'background-color': '#39344a', 'color': '#fff'}),
+                    dcc.Clipboard(target_id="token_display", style={"display": "none"})
+                ], style={'margin-bottom': '6px', 'display': 'flex', 'flex-direction': 'row',
+                          'justify-content': 'spread-inside'}),
             ], className='row',
                 style={'display': 'flex', 'flex-direction': 'column', 'margin-bottom': '10px',
-                       'border-radius': '20px', }),
+                       'border-radius': '20px'}),
 
             # Поле для токена (с кнопкой)
             html.Div([
                 html.P(['Токен, который вы ввели'],
                        className='token_header',
-                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
-                html.Div('*****', id='token_display',
-                         style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
-                                'border': '1px solid #ccc'}),
+                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
+                html.Div([
+                    html.Div('*****', id='token_display',
+                             style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
+                                    'border': '1px solid #ccc', 'color': '#fff',
+                                    'overflow': 'hidden', 'white-space': 'nowrap', 'text-overflow': 'ellipsis'}),
+                    html.Button('Копировать токен', id='copy_token_button',
+                                style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '10px', 'border-radius': '10px', 'cursor': 'pointer',
+                                       'background-color': '#39344a', 'color': '#fff'}),
+                    dcc.Clipboard(target_id="token_display", style={"display": "none"})
+                ], style={'margin-bottom': '6px', 'display': 'flex', 'flex-direction': 'row',
+                          'justify-content': 'spread-inside'}),
                 html.Button('Показать токен', id='show_token_button', n_clicks=0,
-                            style={"padding": "10px", "border-radius": "10px", "cursor": "pointer"})
+                            style={"padding": "10px", "border-radius": "10px", "cursor": "pointer",
+                                   'background-color': '#39344a', 'color': '#fff'})
             ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
         ], className='fields_container', style={'grid-column': 'span 6'}),
 
@@ -49,7 +66,7 @@ app_layout = html.Div([
         html.Div([
             html.P(['Ссылка на сообщество, по которому представлена статистика'],
                        className='link_header',
-                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px'}),
+                       style={'font-style': 'bold', 'font-size': '26px', 'margin-bottom': '10px', 'color': '#090447'}),
 
             # Радиокнопки
             dcc.RadioItems(
@@ -189,18 +206,16 @@ app_layout = html.Div([
 ], style={'background-color': '#8284bd', 'width': '100%'})
 
 
-# Показ или скрытие токена
 @app.callback(
-    Output('token_display', 'children'),
-    [Input('show_token_button', 'n_clicks')],
-    [State('show_token_button', 'children')],
-    prevent_initial_call=True
-)
-def toggle_token(n_clicks, button_text):
-    if button_text == 'Показать токен':
-        return access_token
+        Output('token_display', 'children'),
+        Output('show_token_button', 'children'),
+        [Input('show_token_button', 'n_clicks')],
+    )
+def toggle_token(n_clicks):
+    if n_clicks % 2 == 0:
+        return '******', 'Показать токен'
     else:
-        return '******'
+        return access_token, 'Скрыть токен'
 
 
 # Открытие custom_date поля

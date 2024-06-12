@@ -3,6 +3,7 @@ from tkinter import simpledialog, messagebox
 
 from dash import dash
 
+
 # Создаем главное окно Tkinter
 root = tk.Tk()
 root.withdraw()

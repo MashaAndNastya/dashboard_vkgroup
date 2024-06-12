@@ -67,6 +67,24 @@ def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
                 data_dict['Photo'].append(item['attachments'][0]['photo']['sizes'][-1]['url'])
             else:
                 data_dict['Photo'].append("No photo")
+                # # Получение аватарки группы
+                # main_photo_response = requests.get('https://api.vk.com/method/photos.get',
+                #                                    params={
+                #                                        'access_token': access_token,
+                #                                        'owner_id': '-' + str(id_group),
+                #                                        'album_id': 'profile',
+                #                                        'rev': 1,
+                #                                        'count': 1,
+                #                                        'v': version
+                #                                    })
+                # main_photo_data = main_photo_response.json()
+                # if 'response' in main_photo_data and 'items' in main_photo_data['response'] and \
+                #         main_photo_data['response']['items']:
+                #     main_photo_url = main_photo_data['response']['items'][0]['sizes'][-1]['url']
+                #     data_dict['Photo'].append(main_photo_url)
+                # else:
+                #     data_dict['Photo'].append("No photo")
+
         time.sleep(0.01)
 
     df_posts = pd.DataFrame(data_dict)
