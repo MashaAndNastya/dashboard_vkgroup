@@ -38,6 +38,7 @@ response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                                 'v': 5.199})
 id_group = response.json()['response']['object_id']
 
+
 def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
 
     data_dict = {
