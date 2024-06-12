@@ -31,3 +31,11 @@
 6. Топ-5 целевой аудитории
 
 #### Выберите период времени, за который хотите получить статистику, в радиокнопках в правом верхнем углу страницы!
+скриншоты приложения
+![image](https://github.com/MashaAndNastya/dashboard_vkgroup/assets/90129849/63f8ab9c-1819-427b-b2d2-8c2427f95f28)
+![image](https://github.com/MashaAndNastya/dashboard_vkgroup/assets/90129849/e37a9931-64a2-4be1-9512-95319d78aa0c)
+![image](https://github.com/MashaAndNastya/dashboard_vkgroup/assets/90129849/dbc29d91-d34d-4828-942c-2d419f092f66)
+![image](https://github.com/MashaAndNastya/dashboard_vkgroup/assets/90129849/16b79223-671b-4a27-81e6-1eb126dd5d55)
+
+
+
