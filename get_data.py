@@ -1,23 +1,17 @@
+from datetime import datetime, timezone
+import time
 import pandas as pd
 import requests
-import time
-from datetime import datetime, timezone, date, timedelta
-
-from app import url_start, access_token
-
-#Изначальные переменные, потом будут передаваться через поле для ввода
-#url_start = 'https://vk.com/dimdimychmusic'
-url = url_start.split('/')
-#access_token = "vk1.a.zPEtzBOVfFVEnCAaT2cMvW6CYvsFyOFiB8NFFU9GEz-sWujzUYZuA00WoHRpykSBtNni2EkFM4s4xLB_4_CcWk5SjN-pyh0xoe-pH4OO0CxWWzY1fXxsAzYq0dCXwHimF3p_is6GIyH_wvL0yCGd3SFKeBncr_NOpuodwPr7Hr6Zi9YrG8AQqVtp3Jo-jzA_cFS-1WKcAYnA06vt18QxZg"
-domain = url[-1]
+from dialog_window import access_token, domain, url_start
 
 
-#получаем id группы через запрос
+# Получаем id группы через запрос
 response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                         params={'access_token': access_token,
                                 'screen_name': domain,
                                 'v': 5.199})
 id_group = response.json()['response']['object_id']
+
 
 def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
 
@@ -44,6 +38,7 @@ def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
 
     data_start = response.json()
     count_posts = data_start['response']['count']
+
     for i in range(0, count_posts, 100):
         response = requests.get('https://api.vk.com/method/wall.get',
                                 params={'access_token': access_token,
@@ -78,4 +73,63 @@ def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
     return df_posts
 
 
+# Парсинг постов
+df = fetch_vk_data(access_token, version=5.199, count=100, offset=0)
 
+# Начальное время
+#start_time = df['Date_UNIX'].iloc[-1]+10000
+start_time = '1672562957'
+end_time = str(int(datetime.now().timestamp()))
+
+
+def fetch_vk_stats(start_time, end_time, access_token, id_group):
+    # Загрузка всех параметров
+    params = {
+        'access_token': access_token,
+        'group_id': id_group,
+        'timestamp_from': start_time,
+        'timestamp_to': end_time,
+        'v': 5.199
+    }
+
+    # Запрос к апи
+    response = requests.get('https://api.vk.com/method/stats.get', params=params)
+
+    response_data = response.json()['response']
+
+    # Инициализация заготовок
+    likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user = [], [], [], [], [], [], [], [], []
+    sex_f, sex_m = [], []
+    age_data = {}
+    age_sex_data = {}
+
+    for item in response_data:
+        activity = item.get("activity", {})
+        reach = item.get("reach", {})
+        likes.append(activity.get("likes", 0))
+        copies.append(activity.get("copies", 0))
+        hidden.append(activity.get("hidden", 0))
+        comment.append(activity.get("comment", 0))
+        subscribed.append(activity.get("subscribed", 0))
+        unsubscribed.append(activity.get("unsubscribed", 0))
+        reach1.append(reach.get("reach", 0))
+        reach_subscribers.append(reach.get("reach_subscribers", 0))
+        reach_unique_user. append(reach1[-1]-reach_subscribers[-1])
+
+        for sex in reach.get("sex", []):
+            if sex["value"] == "f":
+                sex_f.append(sex["count"])
+            elif sex["value"] == "m":
+                sex_m.append(sex["count"])
+
+        for age_group in reach.get("age", []):
+            age_data[age_group["value"]] = age_group["count"]
+
+        for sex_age in reach.get("sex_age", []):
+            age_sex_data[sex_age["value"]] = sex_age["count"]
+
+    sex_df = pd.DataFrame({"f": sex_f, "m": sex_m})
+    age_df = pd.DataFrame(list(age_data.items()), columns=["age_group", "count"])
+    age_sex_df = pd.DataFrame(list(age_sex_data.items()), columns=["sex_age", "count"])
+    return (likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user,
+            sex_df, age_df, age_sex_df)
