@@ -1,11 +1,12 @@
 from datetime import date
 from dialog_window import app, url_start
-from items_data import fig_activity, gender_list, most_popular_post, age_list, fig_dynamic, list_items, err_mean, ar_mean
+from items_data import (fig_activity, gender_list, most_popular_post,
+                        age_list, fig_dynamic, list_items, err_mean, ar_mean)
 from datetime import datetime, timedelta
 import plotly.express as px
 from dash import html, dcc, dash
 import plotly.graph_objects as go
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 from dialog_window import access_token
 from get_data import fetch_vk_stats, id_group, df
 from items_data import df_activity, df_dynamic, calculate_err_mean, get_text_advice_err, calculate_ar_mean, \
@@ -21,9 +22,14 @@ app_layout = html.Div([
         html.Div([
             html.P([
                 'Дашборд для анализа статистики ВК сообщества',
-            ], className='page_header',
-                style={'grid-column': 'span 2', 'margin-bottom': '40px', 'margin-left': '20px', 'margin-right': '40px',
-                      'font-size': '32px', 'color': '#fff'})
+
+            ], className='page_header', style={
+                'grid-column': 'span 2',
+                'margin-bottom': '40px',
+                'margin-right': '40px',
+                'font-size': '36px',
+                'font-style': 'bold',
+                'color': '#fff'})
         ]),
 
         # Поля ввода контейнер
@@ -40,10 +46,16 @@ app_layout = html.Div([
                              style={'width': '95%', 'padding': '10px', 'font-size': '18px', 'border-radius': '10px',
                                     'border': '1px solid #fff', 'color': '#b6c5de'}),
                     html.Button('Копировать ссылку', id='copy_link_button',
-                                    style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '10px',
-                                           'border-radius': '10px', 'cursor': 'pointer',
-                                           'background-color': '#39344a', 'color': '#fff'}),
-                    dcc.Clipboard(target_id="token_display", id='clipboard', style={"display": "none"})
+                                style={
+                                    'font-size': '10px',
+                                    'width': 'wrap-content',
+                                    'margin-left': '10px',
+                                    'border-radius': '10px',
+                                    'cursor': 'pointer',
+                                    'background-color': '#39344a',
+                                    'color': '#fff'
+                                }),
+                    dcc.Clipboard(target_id="token_display", style={"display": "none"})
                 ], style={'margin-bottom': '6px', 'display': 'flex', 'flex-direction': 'row',
                           'justify-content': 'spread-inside'}),
             ], className='row',
@@ -61,23 +73,36 @@ app_layout = html.Div([
                                     'border': '1px solid #fff', 'color': '#b6c5de',
                                     'overflow': 'hidden', 'white-space': 'nowrap', 'text-overflow': 'ellipsis'}),
                     html.Button('Копировать токен', id='copy_token_button',
-                                style={'font-size': '10px', 'width': 'wrap-content', 'margin-left': '12px', 'border-radius': '10px', 'cursor': 'pointer',
-                                       'background-color': '#39344a', 'color': '#fff'}),
+                                style={'font-size': '10px',
+                                       'width': 'wrap-content',
+                                       'margin-left': '12px',
+                                       'border-radius': '10px',
+                                       'cursor': 'pointer',
+                                       'background-color': '#39344a',
+                                       'color': '#fff'}),
                     dcc.Clipboard(target_id="token_display", style={"display": "none"})
                 ], style={'margin-bottom': '6px', 'display': 'flex', 'flex-direction': 'row',
                           'justify-content': 'spread-inside'}),
                 html.Button('Показать токен', id='show_token_button', n_clicks=0,
                             style={"padding": "10px", "border-radius": "10px", "cursor": "pointer",
                                    'background-color': '#39344a', 'color': '#fff'})
-            ], className='row', style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
+            ], className='row',
+                style={'display': 'flex', 'flex-direction': 'column', 'border-radius': '20px'}),
         ], className='fields_container', style={'grid-column': 'span 7', 'padding-right': '20px', 'margin-right': '40px'}),
 
 
         # Выбор периода
         html.Div([
-            html.P(['Ссылка на сообщество, по которому представлена статистика'],
-                       className='link_header',
-                       style={'font-style': 'bold', 'font-size': '20px', 'margin-bottom': '10px', 'color': '#fff'}),
+            html.P(
+                ['Ссылка на сообщество, по которому представлена статистика'],
+                className='link_header',
+                style={
+                    'font-weight': 'bold',
+                    'font-size': '26px',
+                    'margin-bottom': '10px',
+                    'color': '#fff'
+                }
+            ),
 
             # Радиокнопки
             dcc.RadioItems(
@@ -90,7 +115,7 @@ app_layout = html.Div([
                 ],
                 value='all_time',
                 inputClassName='radio-item-container',
-                style={'margin-bottom': '20px', 'font': ('Montserrat', '18px'), 'color': '#fff'}
+                style={'margin-bottom': '20px', 'font-size': '18px', 'color': '#fff'}
             ),
 
             # Календарь
@@ -98,20 +123,20 @@ app_layout = html.Div([
                 id='date-picker-div',
                 style={'display': 'none'},
                 children=[
-                dcc.DatePickerRange(
-                    id='date-picker-range',
-                    start_date=date.today(),
-                    end_date_placeholder_text='Выберите дату!'
-                )
-            ]),
+                    dcc.DatePickerRange(
+                        id='date-picker-range',
+                        start_date=date.today(),
+                        end_date_placeholder_text='Выберите дату!'
+                    )
+                ]
+            ),
 
             html.Div(
                 id='output-dates',
                 children=[],
                 style={'display': 'none'}
             )
-        ],
-        className='date_container', style={'grid-column': 'span 3'}),
+        ], className='date_container', style={'grid-column': 'span 3'}),
 
         # График users_activity
         html.Div([
@@ -120,7 +145,7 @@ app_layout = html.Div([
                 figure=fig_activity,
                 className='dcc_compon'
             )
-        ], style={'grid-column': 'span 6', 'border-radius': '5px', 'background-color': '#39344a', 'padding': '10px'}),
+        ], style={'grid-column': 'span 5', 'border-radius': '5px', 'background-color': '#39344a', 'padding': '10px'}),
 
         # Круговая диаграмма М/Ж
         html.Div([
@@ -134,7 +159,7 @@ app_layout = html.Div([
                 className='dcc_compon'
             )
         ], id='gender',
-            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
+            style={'grid-column': 'span 4', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
 
         # Самый популярный пост
         html.Div([
@@ -143,7 +168,8 @@ app_layout = html.Div([
                                                             'margin-bottom': '10px'}),
             html.P(most_popular_post['Text'], style={'color': '#FFFFFF', 'margin-top': '10px'}),
             html.P(
-                f"👍 {most_popular_post['Likes']}   💬 {most_popular_post['Comments']}   👀 {most_popular_post['Views']}   🔄 {most_popular_post['Reposts']}",
+                f"👍 {most_popular_post['Likes']}   💬 {most_popular_post['Comments']}  "
+                f" 👀 {most_popular_post['Views']}  🔄 {most_popular_post['Reposts']}",
                 style={'color': '#FFFFFF', 'margin-top': '10px'}),
             html.A('Ссылка на пост', href=most_popular_post['URL'], target='_blank',
                    style={'color': '#1DA1F2', 'margin-top': '10px', 'textDecoration': 'none'})
@@ -159,7 +185,7 @@ app_layout = html.Div([
                 figure=fig_dynamic,
                 className='dcc_compon'
             )
-        ], style={'grid-column': 'span 6', 'border-radius': '5px', 'background-color': '#39344a', 'padding': '10px'}),
+        ], style={'grid-column': 'span 5', 'border-radius': '5px', 'background-color': '#39344a', 'padding': '10px'}),
 
         # Круговая диаграмма возраст
         html.Div([
@@ -173,7 +199,7 @@ app_layout = html.Div([
                 className='dcc_compon'
             )
         ], id='age',
-            style={'grid-column': 'span 3', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
+            style={'grid-column': 'span 4', 'padding': '10px', 'border-radius': '5px', 'background-color': '#39344a'}),
 
         # Топ целевой аудитории
         html.Div([
@@ -183,9 +209,14 @@ app_layout = html.Div([
                 children=dcc.Markdown(list_items, dangerously_allow_html=True)
                 # Добавляем элементы списка, обработанные как HTML
             )
-        ], id ='target_audience', className='text-container',
-            style={'background-color': '#39344a', 'border-radius': '5px', 'grid-column': 'span 3',
-                   'display': 'flex', 'flex-direction': 'column', 'padding': '20px'}),
+        ], id='target_audience',
+            className='text-container',
+            style={'background-color': '#39344a',
+                   'border-radius': '5px',
+                   'grid-column': 'span 3',
+                   'display': 'flex',
+                   'flex-direction': 'column',
+                   'padding': '20px'}),
 
         # ERR сообщества
         html.Div([
@@ -212,7 +243,7 @@ app_layout = html.Div([
     ],
         className='grid-container',
         style={'background-color': '#8459822', 'display': 'grid', 'grid-template-columns': 'repeat(12, 1fr)',
-               'grid-gap': '20px', 'padding': '20px', 'padding-top': '40px', 'padding-left': '20px',
+               'grid-gap': '20px', 'padding': '20px', 'padding-top': '40px', 'padding-left': '40px',
                'padding-right': '20px'})
 
 ], style={'background-color': '#8284bd', 'width': '100%'})
@@ -247,7 +278,7 @@ def toggle_date_picker(selected_value):
 @app.callback(
     Output('output-dates', 'children'),
     [Input('date-picker-range', 'start_date'),
-    Input('date-picker-range', 'end_date')]
+     Input('date-picker-range', 'end_date')]
 )
 def update_output(start_date, end_date):
     if start_date and end_date:
@@ -298,11 +329,14 @@ def update_graph(selected_period, start_date, end_date):
     # Обновленные данные для активности пользователей
     fig_activity = go.Figure()
     fig_activity.add_trace(
-        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Likes'], mode='lines+markers', name='Лайки'))
+        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Likes'],
+                   mode='lines+markers', name='Лайки'))
     fig_activity.add_trace(
-        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Comments'], mode='lines+markers', name='Комментарии'))
+        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Comments'],
+                   mode='lines+markers', name='Комментарии'))
     fig_activity.add_trace(
-        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Reposts'], mode='lines+markers', name='Репосты'))
+        go.Scatter(x=filtered_df_activity['Date'], y=filtered_df_activity['Reposts'],
+                   mode='lines+markers', name='Репосты'))
 
     # Обновленный график активности пользователей
     fig_activity.update_layout(title='Aктивность пользователей', xaxis_title='Дата', yaxis_title='Количество')
@@ -310,8 +344,10 @@ def update_graph(selected_period, start_date, end_date):
 
     # Обновленные данные для динамики пользователей
     fig_dynamic = go.Figure()
-    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach subscribers'], mode='lines+markers', name='Охваты по подписчикам'))
-    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach unique'], mode='lines+markers', name='Уникальные охваты'))
+    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach subscribers'],
+                                     mode='lines+markers', name='Охваты по подписчикам'))
+    fig_dynamic.add_trace(go.Scatter(x=filtered_df_dynamic['Date'], y=filtered_df_dynamic['Reach unique'],
+                                     mode='lines+markers', name='Уникальные охваты'))
 
     # Обновленный график динамики пользователей
     fig_dynamic.update_layout(title='Динамика охватов', xaxis_title='Дата', yaxis_title='Количество')
@@ -320,7 +356,7 @@ def update_graph(selected_period, start_date, end_date):
     return fig_activity, fig_dynamic
 
 
-#ERR, AR, gender & age pie graphs, most popular post
+# ERR, AR, gender & age pie graphs, most popular post
 @app.callback(
     [Output('ERR', 'children'),
      Output('AR', 'children'),
@@ -333,202 +369,204 @@ def update_graph(selected_period, start_date, end_date):
      Input('date-picker-range', 'end_date')]
 )
 def update_graph(selected_period, start_date, end_date):
-        # Инициализация переменных по умолчанию
-        start_time_selected = None
-        end_time_selected = None
-        if selected_period == 'last_week':
-            start_time_selected = int((datetime.now() - timedelta(days=7)).timestamp())
-            end_time_selected = int(datetime.now().timestamp())
-        elif selected_period == 'last_month':
-            start_time_selected = int((datetime.now() - timedelta(days=30)).timestamp())
-            end_time_selected = int(datetime.now().timestamp())
-        elif selected_period == 'all_time':
-            start_time_selected = 1709286555
-            end_time_selected = int(datetime.now().timestamp())
-        elif selected_period == 'custom_date' and start_date and end_date:
-            start_time_selected = int(datetime.fromisoformat(start_date).timestamp())
-            end_time_selected = int(datetime.fromisoformat(end_date).timestamp())
+    start_time_selected = None
+    end_time_selected = None
 
-        # Получаем новые данные с учетом выбранного промежутка времени
-        data = fetch_vk_stats(start_time_selected, end_time_selected, access_token, id_group)
+    if selected_period == 'last_week':
+        start_time_selected = int((datetime.now() - timedelta(days=7)).timestamp())
+        end_time_selected = int(datetime.now().timestamp())
+    elif selected_period == 'last_month':
+        start_time_selected = int((datetime.now() - timedelta(days=30)).timestamp())
+        end_time_selected = int(datetime.now().timestamp())
+    elif selected_period == 'all_time':
+        start_time_selected = 1709286555
+        end_time_selected = int(datetime.now().timestamp())
+    elif selected_period == 'custom_date' and start_date and end_date:
+        start_time_selected = int(datetime.fromisoformat(start_date).timestamp())
+        end_time_selected = int(datetime.fromisoformat(end_date).timestamp())
 
-        # Собираем нужные данные для ERR & AR
-        likes_selected, copies_selected, comment_selected, reach_selected = data[0], data[1], data[3], data[6]
+    # Получаем новые данные с учетом выбранного промежутка времени
+    data = fetch_vk_stats(start_time_selected, end_time_selected, access_token, id_group)
 
-        # Обновляем ERR
-        err_mean_updated = calculate_err_mean(likes_selected, copies_selected, comment_selected, reach_selected)
-        text_advice_err_updated = get_text_advice_err(err_mean_updated)
+    # Собираем нужные данные для ERR & AR
+    likes_selected, copies_selected, comment_selected, reach_selected = data[0], data[1], data[3], data[6]
 
-        # Обновляем AR
-        ar_mean_updated = calculate_ar_mean(copies_selected, reach_selected)
-        text_advice_ar_updated = get_text_advice_ar(ar_mean_updated)
+    # Обновляем ERR
+    err_mean_updated = calculate_err_mean(likes_selected, copies_selected, comment_selected, reach_selected)
+    text_advice_err_updated = get_text_advice_err(err_mean_updated)
 
-        # Обновляем данные для gender
-        sex_df_selected = data[9]
-        gender_list_updated = list(get_sex(sex_df_selected))
+    # Обновляем AR
+    ar_mean_updated = calculate_ar_mean(copies_selected, reach_selected)
+    text_advice_ar_updated = get_text_advice_ar(ar_mean_updated)
 
-        # Обновляем pie chart для gender
-        gender_pie_updated = px.pie(
-            values=gender_list_updated,
-            names=['Male', 'Female'],
-            title='Пол'
-        ).update_layout(
-            legend_orientation='h',
-            title_x=0.5,
-            plot_bgcolor='#39344a',
-            paper_bgcolor='#39344a',
-            font_color='#cbc2b9'
-        )
+    # Обновляем данные для gender
+    sex_df_selected = data[9]
+    gender_list_updated = list(get_sex(sex_df_selected))
 
-        # Обновляем данные для age
-        age_df_selected = data[10]
-        age_list_updated = list(get_age(age_df_selected))
+    # Обновляем pie chart для gender
+    gender_pie_updated = px.pie(
+        values=gender_list_updated,
+        names=['Male', 'Female'],
+        title='Пол'
+    ).update_layout(
+        legend_orientation='h',
+        title_x=0.5,
+        plot_bgcolor='#39344a',
+        paper_bgcolor='#39344a',
+        font_color='#cbc2b9'
+    )
 
-        # Обновляем pie chart для age
-        age_pie_updated = px.pie(
-            values=age_list_updated,
-            names=['12-21', '21-27', '27-30', '30-45', '45-100'],
-            title='Возраст'
-        ).update_layout(
-            legend_orientation='h',
-            title_x=0.5,
-            plot_bgcolor='#39344a',
-            paper_bgcolor='#39344a',
-            font_color='#cbc2b9'
-        )
-        # Обновляем самый популярный пост
-        most_popular_post_updated = find_most_popular_post(df, start_time_selected, end_time_selected, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
-        post_card_updated = [
-            html.P('Самый популярный пост', style={'color': '#FFFFFF', 'fontWeight': 'bold', 'fontSize': '20px'}),
-            html.Img(src=most_popular_post_updated['Photo'], style={'max-width': '100%', 'border-radius': '5px'}),
-            html.P(most_popular_post_updated['Text'], style={'color': '#FFFFFF', 'margin-top': '10px'}),
-            html.P(
-                f"👍 {most_popular_post_updated['Likes']}   💬 {most_popular_post_updated['Comments']}   👀 {most_popular_post_updated['Views']}   🔄 {most_popular_post_updated['Reposts']}",
-                style={'color': '#FFFFFF', 'margin-top': '10px'}
-            ),
-            html.A('Ссылка на пост', href=most_popular_post_updated['URL'], target='_blank',
-                   style={'color': '#1DA1F2', 'margin-top': '10px', 'textDecoration': 'none'})
-        ]
-        #Обновляем целевую аудиторию
-        age_sex_df_selected = data[11]
-        top_5_updated = top_5_age_sex_category(age_sex_df_selected)
-        list_items_updated = ""
-        for entry in top_5_updated:
-            list_items_updated += f"<li style='color: #f9f9f9; font-size: 16px;'>{entry[0]} - {entry[1]:.3f}%</li>\n"
+    # Обновляем данные для age
+    age_df_selected = data[10]
+    age_list_updated = list(get_age(age_df_selected))
 
-        # Возвращаем ERR, gender pie chart, age pie chart, самый популярный пост, целевую аудиторию
-        return ([
-            html.P('ERR сообщества',
-                    style={'color': '#f9f9f9',
-                           'font-size': '24px',
-                           'font-weight': 'bold',
-                           'font-family': 'Montserrat.ttf',
-                           'mardin-bottom': '5px',
-                           'text-align': 'center'}
-                   ),
-            html.P(err_mean_updated,
-                   style={'color': '#f1986c',
-                          'font-size': '34px',
-                          'font-weight': 'bold',
-                          'mardin-top': '5px',
-                          'text-align': 'center'}
-                   ),
-            html.P(text_err,
-                   style={'color': '#f9f9f9',
-                          'font-size': '12px'}
-                   ),
-            html.P('Советы:',
-                   style={'color': '#f9f9f9',
-                          'font-size': '20px',
-                          'font-weight': 'bold'}
-                   ),
+    # Обновляем pie chart для age
+    age_pie_updated = px.pie(
+        values=age_list_updated,
+        names=['12-21', '21-27', '27-30', '30-45', '45-100'],
+        title='Возраст'
+    ).update_layout(
+        legend_orientation='h',
+        title_x=0.5,
+        plot_bgcolor='#39344a',
+        paper_bgcolor='#39344a',
+        font_color='#cbc2b9'
+    )
+    # Обновляем самый популярный пост
+    most_popular_post_updated = find_most_popular_post(df, start_time_selected, end_time_selected,
+                                                       like_weight=0.5, view_weight=0.3, comment_weight=0.2)
+    post_card_updated = [
+        html.P('Самый популярный пост', style={'color': '#FFFFFF', 'fontWeight': 'bold', 'fontSize': '20px'}),
+        html.Img(src=most_popular_post_updated['Photo'], style={'max-width': '100%', 'border-radius': '5px'}),
+        html.P(most_popular_post_updated['Text'], style={'color': '#FFFFFF', 'margin-top': '10px'}),
+        html.P(
+            f"👍 {most_popular_post_updated['Likes']}   💬 {most_popular_post_updated['Comments']}   "
+            f"👀 {most_popular_post_updated['Views']}   "
+            f"🔄 {most_popular_post_updated['Reposts']}",
+            style={'color': '#FFFFFF', 'margin-top': '10px'}
+        ),
+        html.A('Ссылка на пост', href=most_popular_post_updated['URL'], target='_blank',
+               style={'color': '#1DA1F2', 'margin-top': '10px', 'textDecoration': 'none'})
+    ]
+    # Обновляем целевую аудиторию
+    age_sex_df_selected = data[11]
+    top_5_updated = top_5_age_sex_category(age_sex_df_selected)
+    list_items_updated = ""
+    for entry in top_5_updated:
+        list_items_updated += f"<li style='color: #f9f9f9; font-size: 16px;'>{entry[0]} - {entry[1]:.3f}%</li>\n"
 
-            html.P(text_advice_err_updated,
-                   style={'color': '#f9f9f9', 'font-size': '12px'}),
+    # Возвращаем ERR, gender pie chart, age pie chart, самый популярный пост, целевую аудиторию
+    return ([
+                html.P('ERR сообщества',
+                       style={'color': '#f9f9f9',
+                              'font-size': '24px',
+                              'font-weight': 'bold',
+                              'font-family': 'Montserrat.ttf',
+                              'mardin-bottom': '5px',
+                              'text-align': 'center'}
+                       ),
+                html.P(err_mean_updated,
+                       style={'color': '#f1986c',
+                              'font-size': '34px',
+                              'font-weight': 'bold',
+                              'mardin-top': '5px',
+                              'text-align': 'center'}
+                       ),
+                html.P(text_err,
+                       style={'color': '#f9f9f9',
+                              'font-size': '12px'}
+                       ),
+                html.P('Советы:',
+                       style={'color': '#f9f9f9',
+                              'font-size': '20px',
+                              'font-weight': 'bold'}
+                       ),
 
-            html.P(
-                """Однако общие стандарты бывают обманчивы, лучший способ оценить
-                привлекательность контента — ежемесячно сравнивать текущее значение с ER за предыдущий период.""",
-                   style={'color': '#f9f9f9', 'font-size': '12px'}),
-            html.P(
-                "Можете воспользоваться следующими советами для повышения ERR:",
-                   style={'color': '#f9f9f9', 'font-size': '12px'}),
-            html.Ul([
-                html.Li(
-                    "Задавайте вопросы: это увеличивает количество комментариев.",
+                html.P(text_advice_err_updated,
+                       style={'color': '#f9f9f9', 'font-size': '12px'}),
+
+                html.P(
+                    """Однако общие стандарты бывают обманчивы, лучший способ оценить
+                    привлекательность контента — ежемесячно сравнивать текущее значение с ER за предыдущий период.""",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.P(
+                    "Можете воспользоваться следующими советами для повышения ERR:",
+                    style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.Ul([
+                    html.Li(
+                        "Задавайте вопросы: это увеличивает количество комментариев.",
                         style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Вводите геймификацию: интерактивы удерживают людей и продлевают взаимодействие с публикацией.",
-                    style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Проводите опросы и голосования: они хорошо вовлекают.",
+                    html.Li(
+                        "Вводите геймификацию: интерактивы удерживают людей и продлевают взаимодействие с публикацией.",
                         style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Общайтесь в комментариях: отвечайте на сообщения — так люди будут втягиваться в общение с брендом.",
-                    style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Оптимизируйте базу подписчиков.",
+                    html.Li(
+                        "Проводите опросы и голосования: они хорошо вовлекают.",
                         style={'color': '#f9f9f9', 'font-size': '12px'}),
-            ])
-        ],
-        [
-            html.P('AR сообщества',
-                   style={'color': '#f9f9f9',
-                          'font-size': '24px',
-                          'font-weight': 'bold',
-                          'font-family': 'Montserrat.ttf',
-                          'mardin-bottom': '5px',
-                          'text-align': 'center'}
-                   ),
-            html.P(ar_mean_updated,
-                   style={'color': '#f1986c',
-                          'font-size': '34px',
-                          'font-weight': 'bold',
-                          'mardin-top': '5px',
-                          'text-align': 'center'}
-                   ),
-            html.P(text_ar,
-                   style={'color': '#f9f9f9',
-                          'font-size': '12px'}
-                   ),
-            html.P('Советы:',
-                   style={'color': '#f9f9f9',
-                          'font-size': '20px',
-                          'font-weight': 'bold'}
-                   ),
+                    html.Li(
+                        "Общайтесь в комментариях: отвечайте на сообщения — так люди будут втягиваться в общение с брендом.",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                    html.Li(
+                        "Оптимизируйте базу подписчиков.",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                ])
+            ],
+            [
+                html.P('AR сообщества',
+                       style={'color': '#f9f9f9',
+                              'font-size': '24px',
+                              'font-weight': 'bold',
+                              'font-family': 'Montserrat.ttf',
+                              'mardin-bottom': '5px',
+                              'text-align': 'center'}
+                       ),
+                html.P(ar_mean_updated,
+                       style={'color': '#f1986c',
+                              'font-size': '34px',
+                              'font-weight': 'bold',
+                              'mardin-top': '5px',
+                              'text-align': 'center'}
+                       ),
+                html.P(text_ar,
+                       style={'color': '#f9f9f9',
+                              'font-size': '12px'}
+                       ),
+                html.P('Советы:',
+                       style={'color': '#f9f9f9',
+                              'font-size': '20px',
+                              'font-weight': 'bold'}
+                       ),
 
-            html.P(text_advice_ar_updated,
-                   style={'color': '#f9f9f9', 'font-size': '12px'}),
+                html.P(text_advice_ar_updated,
+                       style={'color': '#f9f9f9', 'font-size': '12px'}),
 
-            html.P(
-                """Однако общие стандарты бывают обманчивы, лучший способ оценить
-                привлекательность контента — ежемесячно сравнивать текущее значение с AR за предыдущий период.""",
-                style={'color': '#f9f9f9', 'font-size': '12px'}),
-            html.P(
-                "Можете воспользоваться следующими советами для повышения AR:",
-                style={'color': '#f9f9f9', 'font-size': '12px'}),
-            html.Ul([
-                html.Li(
-                    "Размещайте больше полезных информативных постов. Подписчики должны видеть: вы — настоящий профессионал в своей области и вашему мнению можно доверять. ",
+                html.P(
+                    """Однако общие стандарты бывают обманчивы, лучший способ оценить
+                    привлекательность контента — ежемесячно сравнивать текущее значение с AR за предыдущий период.""",
                     style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Публикуйте разнообразный контент. Чередуйте информационные посты с вовлекающими и развлекательными публикациями.",
+                html.P(
+                    "Можете воспользоваться следующими советами для повышения AR:",
                     style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Добавляйте в контент-план форматы, которые репостят чаще других (чек-листы, гайды, подборки, карточки). Устраивайте конкурсы и розыгрыши среди подписчиков. ",
-                    style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Анализируйте контент конкурентов. Посмотрите, какими записями пользователи делятся чаще всего, в каком ключе поданы самые популярные посты, в каком стиле написаны тексты и какие изображения использованы: реальные фотографии, коллажи или мемы.",
-                    style={'color': '#f9f9f9', 'font-size': '12px'}),
-                html.Li(
-                    "Экспериментируйте со временем публикации постов. К примеру, пользователи соцсети «ВКонтакте» проявляют самую большую активность с 8:00 до 10:00 (в это время подписчики готовятся к учебе и работе, они с удовольствием почитают легкие развлекательные посты). Следующий период активности — с 12:00 до 15:00 (сейчас можно публиковать серьезные материалы: обзоры товаров, презентации новых продуктов, результаты исследований). Время максимального охвата — с 21:00 до 23:00. Для этого интервала оставьте самые важные и интересные новости: информацию об акциях и скидках, новостях компании.",
-                    style={'color': '#f9f9f9', 'font-size': '12px'}),
-            ])
-        ], gender_pie_updated, age_pie_updated, post_card_updated,
-                [
-                    html.P("Основные категории целевой аудитории", style={'color': '#FFFFFF', 'fontWeight': 'bold'}),
-                    html.P(text_target_audience, style={'color': '#f9f9f9', 'font-size': '16px'}),
-                    html.Ol(children=dcc.Markdown(list_items_updated, dangerously_allow_html=True))
-                ]
-        )
-
+                html.Ul([
+                    html.Li(
+                        "Размещайте больше полезных информативных постов. Подписчики должны видеть: вы — настоящий профессионал в своей области и вашему мнению можно доверять. ",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                    html.Li(
+                        "Публикуйте разнообразный контент. Чередуйте информационные посты с вовлекающими и развлекательными публикациями.",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                    html.Li(
+                        "Добавляйте в контент-план форматы, которые репостят чаще других (чек-листы, гайды, подборки, карточки). Устраивайте конкурсы и розыгрыши среди подписчиков. ",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                    html.Li(
+                        "Анализируйте контент конкурентов. Посмотрите, какими записями пользователи делятся чаще всего, в каком ключе поданы самые популярные посты, в каком стиле написаны тексты и какие изображения использованы: реальные фотографии, коллажи или мемы.",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                    html.Li(
+                        "Экспериментируйте со временем публикации постов. К примеру, пользователи соцсети «ВКонтакте» проявляют самую большую активность с 8:00 до 10:00 (в это время подписчики готовятся к учебе и работе, они с удовольствием почитают легкие развлекательные посты). Следующий период активности — с 12:00 до 15:00 (сейчас можно публиковать серьезные материалы: обзоры товаров, презентации новых продуктов, результаты исследований). Время максимального охвата — с 21:00 до 23:00. Для этого интервала оставьте самые важные и интересные новости: информацию об акциях и скидках, новостях компании.",
+                        style={'color': '#f9f9f9', 'font-size': '12px'}),
+                ])
+            ], gender_pie_updated, age_pie_updated, post_card_updated,
+            [
+                html.P("Основные категории целевой аудитории", style={'color': '#FFFFFF', 'fontWeight': 'bold'}),
+                html.P(text_target_audience, style={'color': '#f9f9f9', 'font-size': '16px'}),
+                html.Ol(children=dcc.Markdown(list_items_updated, dangerously_allow_html=True))
+            ]
+    )

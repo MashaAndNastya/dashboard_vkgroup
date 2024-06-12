@@ -4,12 +4,14 @@ from dialog_window import access_token
 from get_data import start_time, end_time, df, fetch_vk_stats, id_group
 from strings import ar_mean_low, ar_mean_average, ar_mean_high, err_mean_high, err_mean_average, err_mean_low
 
+# Перевод во временной промежуток (список) для построения графика
+date_range = pd.date_range(start=pd.to_datetime(int(start_time), unit='s').date(),
+                           end=pd.to_datetime(int(end_time), unit='s').date())
 
-# Перевод во временной промежуток(список) для построения графика
-date_range = pd.date_range(start=pd.to_datetime(int(start_time), unit='s').date(), end=pd.to_datetime(int(end_time), unit='s').date())
-
-# Вызов функции, запись  в переменные и постобработка данных
-likes, copies, hidden, comment, subscribed, unsubscribed, reach, reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df = fetch_vk_stats(start_time, end_time, access_token, id_group)
+# Вызов функции, запись в переменные и постобработка данных
+(likes, copies, hidden, comment, subscribed, unsubscribed, reach,
+ reach_subscribers, reach_unique_user, sex_df, age_df, age_sex_df) = \
+    (fetch_vk_stats(start_time, end_time, access_token, id_group))
 
 
 # Данные для пола
@@ -19,7 +21,7 @@ def get_sex(sex_df):
     return count_female, count_male
 
 
-#топ-5 категорий по половозрастному составу
+# Топ-5 категорий по половозрастному составу
 def top_5_age_sex_category(age_sex_df):
     age_sex_df = age_sex_df.sort_values(by=['count'], ascending=False)
     total_count = age_sex_df['count'].sum()
@@ -31,17 +33,21 @@ def top_5_age_sex_category(age_sex_df):
             percentage = round((row['count'] / total_count) * 100, 3)
             top_5.append((category, percentage))
     return top_5
+
+
 top_5 = top_5_age_sex_category(age_sex_df)
 
 
 # Данные для диаграммы возрастов
 def get_age(age_df):
-    age_12_21 = age_df[(age_df['age_group'] == '12-18')]['count'].values[0]+age_df[(age_df['age_group'] == '18-21')]['count'].values[0]
-    age_21_27 = age_df[(age_df['age_group'] == '21-24')]['count'].values[0]+age_df[(age_df['age_group'] == '24-27')]['count'].values[0]
-    age_27_30 = age_df[(age_df['age_group'] == '27-30')]['count'].values[0]+age_df[(age_df['age_group'] == '30-35')]['count'].values[0]
+    age_12_21 = (age_df[(age_df['age_group'] == '12-18')]['count'].values[0]
+                 + age_df[(age_df['age_group'] == '18-21')]['count'].values[0])
+    age_21_27 = (age_df[(age_df['age_group'] == '21-24')]['count'].values[0]
+                 + age_df[(age_df['age_group'] == '24-27')]['count'].values[0])
+    age_27_30 = (age_df[(age_df['age_group'] == '27-30')]['count'].values[0]
+                 + age_df[(age_df['age_group'] == '30-35')]['count'].values[0])
     age_35_45 = age_df[(age_df['age_group'] == '35-45')]['count'].values[0]
     age_45_100 = age_df[(age_df['age_group'] == '45-100')]['count'].values[0]
-
     return age_12_21, age_21_27, age_27_30, age_35_45, age_45_100
 
 
@@ -83,7 +89,7 @@ def get_text_advice_ar(ar_mean):
         return ar_mean_high
 
 
-#вычисление самого популярного поста
+# Вычисление самого популярного поста
 def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2):
     # Преобразование столбца Date_UNIX в числовой тип данных
     df['Date_UNIX'] = pd.to_numeric(df['Date_UNIX'], errors='coerce')
@@ -108,7 +114,8 @@ def find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weigh
     return most_popular_post
 
 
-most_popular_post = find_most_popular_post(df, start_time, end_time, like_weight=0.5, view_weight=0.3, comment_weight=0.2)
+most_popular_post = find_most_popular_post(df, start_time, end_time,
+                                           like_weight=0.5, view_weight=0.3, comment_weight=0.2)
 
 # Данные активности: лайки, комментарии, репосты
 data_activity = {
@@ -124,9 +131,12 @@ df_activity['Unix'] = df_activity['Date'].apply(lambda x: int(x.timestamp()))
 
 # Построение графика активности
 fig_activity = go.Figure()
-fig_activity.add_trace(go.Scatter(x=df_activity['Date'], y=df_activity['Likes'], mode='lines+markers', name='Likes'))
-fig_activity.add_trace(go.Scatter(x=df_activity['Date'], y=df_activity['Comments'], mode='lines+markers', name='Comments'))
-fig_activity.add_trace(go.Scatter(x=df_activity['Date'], y=df_activity['Reposts'], mode='lines+markers', name='Reposts'))
+fig_activity.add_trace(go.Scatter(x=df_activity['Date'], y=df_activity['Likes'],
+                                  mode='lines+markers', name='Likes'))
+fig_activity.add_trace(go.Scatter(x=df_activity['Date'], y=df_activity['Comments'],
+                                  mode='lines+markers', name='Comments'))
+fig_activity.add_trace(go.Scatter(x=df_activity['Date'], y=df_activity['Reposts'],
+                                  mode='lines+markers', name='Reposts'))
 fig_activity.update_layout(title='Activity', xaxis_title='Date', yaxis_title='Count')
 fig_activity.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
 
@@ -144,8 +154,10 @@ df_dynamic['Unix'] = df_dynamic['Date'].apply(lambda x: int(x.timestamp()))
 
 # Построение графика динамики пользователей
 fig_dynamic = go.Figure()
-fig_dynamic.add_trace(go.Scatter(x=df_dynamic['Date'], y=df_dynamic['Reach subscribers'], mode='lines+markers', name='Reach subscribers'))
-fig_dynamic.add_trace(go.Scatter(x=df_dynamic['Date'], y=df_dynamic['Reach unique'], mode='lines+markers', name='Reach unique'))
+fig_dynamic.add_trace(go.Scatter(x=df_dynamic['Date'], y=df_dynamic['Reach subscribers'],
+                                 mode='lines+markers', name='Reach subscribers'))
+fig_dynamic.add_trace(go.Scatter(x=df_dynamic['Date'], y=df_dynamic['Reach unique'],
+                                 mode='lines+markers', name='Reach unique'))
 fig_dynamic.update_layout(title='User Dynamics', xaxis_title='Date', yaxis_title='Count')
 fig_dynamic.update_layout(plot_bgcolor='#39344a', paper_bgcolor='#39344a', font_color='#cbc2b9')
 
@@ -156,11 +168,7 @@ gender_list = list(get_sex(sex_df))
 # Возраст для круговой диаграммы
 age_list = list(get_age(age_df))
 
-#подготовка списка категорий целевой аудитории к выводу на экран
+# Подготовка списка категорий целевой аудитории к выводу на экран
 list_items = ""
 for entry in top_5:
     list_items += f"<li style='color: #f9f9f9; font-size: 16px;'>{entry[0]} - {entry[1]:.3f}%</li>\n"
-
-
-
-

@@ -4,7 +4,6 @@ import pandas as pd
 import requests
 from dialog_window import access_token, domain, url_start
 
-
 # Получаем id группы через запрос
 response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
                         params={'access_token': access_token,
@@ -13,7 +12,7 @@ response = requests.get('https://api.vk.com/method/utils.resolveScreenName',
 id_group = response.json()['response']['object_id']
 
 
-def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
+def fetch_vk_data(access_token, version=5.199, count=100, offset=0):
 
     data_dict = {
         'ID': [],
@@ -27,7 +26,6 @@ def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
         'Date_UNIX': [],
         'Photo': []
     }
-
 
     response = requests.get('https://api.vk.com/method/wall.get',
                             params={'access_token': access_token,
@@ -60,7 +58,8 @@ def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
                 data_dict['Views'].append(None)
         data_dict['Reposts'].extend([item['reposts']['count'] for item in data])
         data_dict['URL'].extend([url_start + "?w=wall-" + str(id_group) + "_" + str(item['id']) for item in data])
-        data_dict['Date'].extend([datetime.fromtimestamp(item['date'], timezone.utc).strftime('%Y-%m-%d') for item in data])
+        data_dict['Date'].extend([datetime.fromtimestamp(item['date'], timezone.utc).strftime('%Y-%m-%d')
+                                  for item in data])
         data_dict['Date_UNIX'].extend([item['date'] for item in data])
         for item in data:
             if 'attachments' in item and item['attachments'] and item['attachments'][0]['type'] == 'photo':
@@ -78,7 +77,7 @@ def fetch_vk_data(access_token, version = 5.199 , count = 100, offset = 0):
 df = fetch_vk_data(access_token, version=5.199, count=100, offset=0)
 
 # Начальное время
-#start_time = df['Date_UNIX'].iloc[-1]+10000
+# start_time = df['Date_UNIX'].iloc[-1]+10000
 start_time = '1672562957'
 end_time = str(int(datetime.now().timestamp()))
 
@@ -99,7 +98,8 @@ def fetch_vk_stats(start_time, end_time, access_token, id_group):
     response_data = response.json()['response']
 
     # Инициализация заготовок
-    likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user = [], [], [], [], [], [], [], [], []
+    likes, copies, hidden, comment, subscribed, unsubscribed, reach1, reach_subscribers, reach_unique_user = \
+        ([], [], [], [], [], [], [], [], [])
     sex_f, sex_m = [], []
     age_data = {}
     age_sex_data = {}
